@@ -13,20 +13,50 @@ import { VStack } from "@/components/ui/vstack";
 import { useActionSheet } from "@/contexts/ActionSheetContext";
 import { useDrawer } from "@/contexts/DrawerContext";
 import { Ionicons } from "@expo/vector-icons";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 
 import { Dimensions, StyleSheet, Text, View } from "react-native";
-
+import { createUserWithEmailAndPassword, onAuthStateChanged, signInWithEmailAndPassword, signOut, updateEmail, updatePassword, User } from "firebase/auth"
+import { auth, db } from "../../firebaseConfig"
+import { doc, serverTimestamp, setDoc } from "firebase/firestore";
 
 const { width, height } = Dimensions.get("window");
 
 export default function Account() {
   const { openActionSheet, setBodyContent, closeActionSheet } = useActionSheet();
   const { openDrawer, setDrawerContent } = useDrawer();
+  const [user, setUser] = useState<User | null>(null);
+  const [accountEmail, setAccountEmail] = useState<string | null>("")
+
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+      if (currentUser) {
+        setAccountEmail(currentUser.email)
+        setUser(currentUser)
+      }
+      else {
+        setUser(null)
+      }
+    });
+    return () => unsubscribe()
+  }, [])
+
+
+  const signOutFromAccount = () => {
+    signOut(auth).then(() => {
+      console.log("user sign Out succes!")
+    }).catch((e) => {
+      console.log(e)
+    })
+  }
+
+
 
   return (
+
     <>
-      <View
+      {user ? <View
         style={styles.accountViewStyle}
       >
         <VStack
@@ -60,7 +90,7 @@ export default function Account() {
           <Text
             style={styles.accountText}
           >
-            Mancer Abd-ElFetah
+            {accountEmail}
           </Text>
           <Box style={{ marginTop: 100 }}>
             <VStack style={styles.vStackStyle}>
@@ -98,7 +128,7 @@ export default function Account() {
               {/* Se deconnecter */}
               <Pressable
                 onPress={() => {
-
+                  signOutFromAccount()
                 }}
                 style={styles.pressableStyle}
               >
@@ -112,7 +142,7 @@ export default function Account() {
           </Box>
         </VStack>
 
-      </View>
+      </View> : <LoginScreen></LoginScreen>}
     </>
   );
 }
@@ -129,10 +159,27 @@ function PersonaInfoBody() {
 
 function AccountBody({ onSubmit }: { onSubmit: () => void }) {
   const [spinnerIsVisible, setSpinnerIsVisible] = useState(false);
-  const handleSubmit = () => {
-    setSpinnerIsVisible(true);
-    onSubmit();
+  const [accountEmail, setAccountEmail] = useState<string | null>(auth.currentUser?.email!)
+  const [accountPassword, setAccountPassword] = useState<string | null>("")
+
+  const updateUserAccountInfo = async () => {
+    try {
+      setSpinnerIsVisible(true);
+      if (auth.currentUser?.email !== accountEmail) {
+        await updateEmail(auth.currentUser!, accountEmail!)
+      }
+
+      if (accountPassword?.length! > 0) {
+        await updatePassword(auth.currentUser!, accountPassword!)
+      }
+    } catch (e) {
+      console.log(e)
+    } finally {
+      setSpinnerIsVisible(false);
+      onSubmit();
+    }
   }
+
   const emailPlaceholder: string = "Entrer votre email"
   const emailLabel: string = "Email"
   const emailExemple: string = "mancer@abdel.com"
@@ -145,12 +192,13 @@ function AccountBody({ onSubmit }: { onSubmit: () => void }) {
   return (
     <View style={styles.actionbSheetBodyContainerStyle}>
       <VStack style={styles.vStackStyle}>
+
         <FormControl style={styles.formControlStyle} >
           <FormControlLabel>
             <FormControlLabelText>{emailLabel}</FormControlLabelText>
           </FormControlLabel>
           <Input>
-            <InputField placeholder={emailPlaceholder} defaultValue={emailExemple}></InputField>
+            <InputField onChangeText={setAccountEmail} placeholder={emailPlaceholder} defaultValue={accountEmail!}></InputField>
           </Input>
         </FormControl>
 
@@ -159,10 +207,10 @@ function AccountBody({ onSubmit }: { onSubmit: () => void }) {
             <FormControlLabelText>{passwordLabel}</FormControlLabelText>
           </FormControlLabel>
           <Input>
-            <InputField type="password" placeholder={passwordPlaceholder} defaultValue={passwordExemple}></InputField>
+            <InputField onChangeText={setAccountPassword} type="password" placeholder={passwordPlaceholder} defaultValue={passwordExemple}></InputField>
           </Input>
         </FormControl>
-        <Button style={styles.submitButtonStyle} onPress={handleSubmit}>
+        <Button style={styles.submitButtonStyle} onPress={updateUserAccountInfo}>
           {spinnerIsVisible ? <ButtonSpinner /> : <ButtonText>{buttonLable}</ButtonText>}
         </Button>
       </VStack>
@@ -190,21 +238,155 @@ function SettingsBody() {
 }
 
 function LoginScreen() {
-  <View>
-    <Text>Connexion</Text>
-    <FormControl></FormControl>
-    <FormControl></FormControl>
-    <Button></Button>
-  </View>
+  const registerLabel: string = "S'Inscrire"
+  const emailPlaceholder: string = "Entrer votre email"
+  const passwordPlaceholder: string = "Entrer votre mot de passe"
+  const emailLabel: string = "Email"
+  const passwordLabel: string = 'Mot De Passe'
+
+  const [registerSectionVisibility, setRegisterSectionVisibility] = useState<boolean>(false)
+  const [email, setEmail] = useState<string>("")
+  const [password, setPassword] = useState<string>("")
+  const [loader, setLoader] = useState<boolean>(false)
+
+  const handleLogin = async () => {
+    try {
+      setLoader(true)
+      await signInWithEmailAndPassword(auth, email, password);
+
+    } catch (e) {
+      console.log(e)
+    } finally {
+      setLoader(false)
+    }
+  }
+
+  return (
+    <>
+      {
+        registerSectionVisibility === false ? <View style={styles.loginViewContainerStyle}>
+          <View style={styles.loginScreenTitleContainer}><Text style={styles.authScreenTitle}>Connexion</Text></View>
+
+          <Divider style={styles.settingsBodyHeaderDividerStyle}></Divider>
+          <FormControl style={styles.formControlStyle}>
+            <FormControlLabel>
+              <FormControlLabelText>{emailLabel}</FormControlLabelText>
+            </FormControlLabel>
+            <Input>
+              <InputField onChangeText={setEmail} value={email} type="text" placeholder={emailPlaceholder}></InputField>
+            </Input>
+          </FormControl>
+
+          <FormControl style={styles.formControlStyle}>
+            <FormControlLabel>
+              <FormControlLabelText>{passwordLabel}</FormControlLabelText>
+            </FormControlLabel>
+            <Input>
+              <InputField onChangeText={setPassword} value={password} type="password" placeholder={passwordPlaceholder}>
+              </InputField>
+            </Input>
+          </FormControl>
+          <Button onPress={handleLogin} style={styles.submitButtonStyle}>
+            <ButtonText>Se Connecter</ButtonText>
+            {loader && <ButtonSpinner></ButtonSpinner>}
+          </Button>
+          <Pressable onPress={() => {
+            setRegisterSectionVisibility(true)
+          }}>
+            <Text>{registerLabel}</Text>
+          </Pressable>
+        </View> : <RegisterScreen setRegisterVisibility={() => setRegisterSectionVisibility(false)} />
+      }
+    </>
+  )
 }
 
-function RegisterScreen() {
-  <View>
-    <Text>Inscription</Text>
-    <FormControl></FormControl>
-    <FormControl></FormControl>
-    <Button></Button>
-  </View>
+function RegisterScreen({ setRegisterVisibility }: { setRegisterVisibility: () => void }) {
+
+  const loginLabel: string = "Se Connecter"
+  const emailPlaceholder: string = "Entrer votre email"
+  const passwordPlaceholder: string = "Entrer votre mot de passe"
+  const passwordConfirmPlaceholder: string = "Confirmer votre Mot de passe"
+
+  const emailLabel: string = "Email"
+  const passwordLabel: string = 'Mot De Passe'
+  const passwordConfirmLabel: string = 'Confimer Mot De Passe'
+
+  const [loader, setLoader] = useState<boolean>(false)
+  const [password, setPassword] = useState<string>()
+  const [passwordConfirm, setPasswordConfirm] = useState<string>()
+  const [email, setEmail] = useState<string>()
+
+
+
+  const handleRegister = async () => {
+    try {
+      setLoader(true)
+      if (password === passwordConfirm && email?.length! > 0) {
+        const userCredentials = await createUserWithEmailAndPassword(auth, email!, password!)
+
+        const user = userCredentials.user
+
+        await setDoc(doc(db, "users", user.uid), {
+          uid: user.uid,
+          email: user.email,
+          createdAt: serverTimestamp(),
+          lastLogin: serverTimestamp()
+        }).then(() => console.log("document is created")).
+          catch(e => console.log(e))
+      }
+    } catch (e) {
+      console.log(e)
+    } finally {
+      setLoader(false)
+    }
+
+  }
+  return (
+    <View style={styles.loginViewContainerStyle}>
+      <View style={styles.loginScreenTitleContainer}><Text style={styles.authScreenTitle}>S'inscrire</Text></View>
+
+      <Divider style={styles.settingsBodyHeaderDividerStyle}></Divider>
+      <FormControl style={styles.formControlStyle}>
+        <FormControlLabel>
+          <FormControlLabelText>{emailLabel}</FormControlLabelText>
+        </FormControlLabel>
+        <Input>
+          <InputField onChangeText={setEmail} value={email} type="text" placeholder={emailPlaceholder}></InputField>
+        </Input>
+      </FormControl>
+
+      <FormControl style={styles.formControlStyle}>
+        <FormControlLabel>
+          <FormControlLabelText>{passwordLabel}</FormControlLabelText>
+        </FormControlLabel>
+        <Input>
+          <InputField onChangeText={setPassword} defaultValue={password} type="password" placeholder={passwordPlaceholder}>
+          </InputField>
+        </Input>
+      </FormControl>
+
+      <FormControl style={styles.formControlStyle}>
+        <FormControlLabel>
+          <FormControlLabelText>{passwordConfirmLabel}</FormControlLabelText>
+        </FormControlLabel>
+        <Input>
+          <InputField onChangeText={setPasswordConfirm} defaultValue={passwordConfirm} type="password" placeholder={passwordConfirmPlaceholder}>
+          </InputField>
+        </Input>
+      </FormControl>
+
+      <Button onPress={handleRegister} style={styles.submitButtonStyle}>
+        <ButtonText>Se Connecter</ButtonText>
+        {loader && <ButtonSpinner></ButtonSpinner>}
+      </Button>
+      <Pressable onPress={() => {
+        setRegisterVisibility()
+      }}>
+        <Text>{loginLabel}</Text>
+      </Pressable>
+    </View>
+  )
 }
 
 
@@ -292,6 +474,27 @@ const styles = StyleSheet.create({
     color: "white",
     fontSize: 20,
     fontWeight: 600,
+  },
+
+  //Login Style
+  loginViewContainerStyle: {
+    display: "flex",
+    flexDirection: "column",
+    justifyContent: "flex-start",
+    alignItems: "center",
+    width: "100%",
+    height: height,
+    gap: 20,
+    backgroundColor: "#1c2b21",
+  },
+  loginScreenTitleContainer: {
+    display: "flex",
+    marginTop: height * 0.1
+  },
+  authScreenTitle: {
+    fontSize: 29,
+    color: "white",
+    fontWeight: 600
   }
 
 
