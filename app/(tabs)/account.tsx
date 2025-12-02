@@ -19,16 +19,21 @@ import React, { useEffect, useState } from "react";
 import { Dimensions, StyleSheet, Text, View } from "react-native";
 import { createUserWithEmailAndPassword, deleteUser, onAuthStateChanged, signInWithEmailAndPassword, signOut, updateEmail, updatePassword, User } from "firebase/auth"
 import { auth, db } from "../../firebaseConfig"
-import { collection, deleteDoc, doc, serverTimestamp, setDoc } from "firebase/firestore";
+import { collection, deleteDoc, doc, DocumentData, onSnapshot, serverTimestamp, setDoc } from "firebase/firestore";
 
 
 const { width, height } = Dimensions.get("window");
+import { Colors } from "@/constants/Colors";
+import { pickImage, uriToBlob } from "@/utils/image_functions";
+import { saveUrlToFirestore, uploadProfileImageToCloud } from "@/utils/cloud_storage";
 
 export default function Account() {
   const { openActionSheet, setBodyContent, closeActionSheet } = useActionSheet();
   const { openDrawer, setDrawerContent } = useDrawer();
   const [user, setUser] = useState<User | null>(null);
+  const [userData, setUserData] = useState<DocumentData>()
   const [accountEmail, setAccountEmail] = useState<string | null>("")
+
 
 
   useEffect(() => {
@@ -42,6 +47,25 @@ export default function Account() {
       }
     });
     return () => unsubscribe()
+  }, [])
+
+
+  useEffect(() => {
+    const usersColl = collection(db, "users")
+
+    const userRef = doc(usersColl, auth.currentUser?.uid)
+
+
+    const unsub = onSnapshot(userRef, (snapshot) => {
+      if (snapshot.exists()) {
+        setUserData(snapshot.data())
+        console.log(userData)
+      }
+
+    })
+
+    return () => unsub()
+
   }, [])
 
 
@@ -61,6 +85,13 @@ export default function Account() {
     } catch (e) {
       console.log(e)
     }
+  }
+
+
+  const openProfilePhotoActionSheet = () => {
+    openActionSheet()
+    setBodyContent(<ProfilePhotoMenu />) // for the action sheet
+
   }
 
 
@@ -85,18 +116,22 @@ export default function Account() {
               )
               openDrawer()
             }} variant="outline" size="xl" style={{ borderWidth: 0 }}>
-              <ButtonIcon as={SettingsIcon} color="#DBE2EF" />
+              <ButtonIcon as={SettingsIcon} color={Colors.lightBlue} />
             </Button>
           </Box>
           {/* Avatar */}
           <Box style={{ marginTop: 20, marginBottom: 20 }}>
-            <Avatar size="2xl" style={{ borderWidth: 2, borderColor: "#3F72AF" }}>
-              <AvatarFallbackText>Icon</AvatarFallbackText>
-              <AvatarImage
-                source={require("../../assets/photo.jpg")}
-              ></AvatarImage>
-              <AvatarBadge />
-            </Avatar>
+            <Pressable onPress={openProfilePhotoActionSheet}>
+              <Avatar size="2xl" style={{ borderWidth: 2, borderColor: Colors.primary }}>
+                <AvatarFallbackText>Icon</AvatarFallbackText>
+                <AvatarImage
+                  source={{
+                    uri: userData!.profilePictureUrl
+                  }}
+                ></AvatarImage>
+                <AvatarBadge />
+              </Avatar>
+            </Pressable>
           </Box>
 
           <Text
@@ -120,13 +155,13 @@ export default function Account() {
               }} style={styles.pressableStyle}>
                 <HStack style={{ alignItems: "center", gap: 15 }}>
                   <View style={styles.iconContainer}>
-                    <Ionicons name="person" color={"#DBE2EF"} size={20}></Ionicons>
+                    <Ionicons name="person" color={Colors.lightBlue} size={20}></Ionicons>
                   </View>
                   <Text style={styles.accountText}>
                     Mon Compte
                   </Text>
                 </HStack>
-                <Ionicons name="chevron-forward" color={"#DBE2EF"} size={20}></Ionicons>
+                <Ionicons name="chevron-forward" color={Colors.lightBlue} size={20}></Ionicons>
               </Pressable>
 
               {/* Mes Informations personelles */}
@@ -141,13 +176,13 @@ export default function Account() {
               >
                 <HStack style={{ alignItems: "center", gap: 15 }}>
                   <View style={styles.iconContainer}>
-                    <Ionicons name="information-circle" color={"#DBE2EF"} size={20}></Ionicons>
+                    <Ionicons name="information-circle" color={Colors.lightBlue} size={20}></Ionicons>
                   </View>
                   <Text style={styles.accountText}>
                     Mes Informations
                   </Text>
                 </HStack>
-                <Ionicons name="chevron-forward" color={"#DBE2EF"} size={20}></Ionicons>
+                <Ionicons name="chevron-forward" color={Colors.lightBlue} size={20}></Ionicons>
               </Pressable>
 
               {/* Se deconnecter */}
@@ -159,9 +194,9 @@ export default function Account() {
               >
                 <HStack style={{ alignItems: "center", gap: 15 }}>
                   <View style={[styles.iconContainer, { backgroundColor: "rgba(220, 53, 69, 0.2)" }]}>
-                    <Ionicons name="log-out" color={"#ff6b6b"} size={20}></Ionicons>
+                    <Ionicons name="log-out" color={Colors.error} size={20}></Ionicons>
                   </View>
-                  <Text style={[styles.accountText, { color: "#ff6b6b" }]}>
+                  <Text style={[styles.accountText, { color: Colors.error }]}>
                     Se deconnecter
                   </Text>
                 </HStack>
@@ -176,9 +211,9 @@ export default function Account() {
               >
                 <HStack style={{ alignItems: "center", gap: 15 }}>
                   <View style={[styles.iconContainer, { backgroundColor: "rgba(220, 53, 69, 0.2)" }]}>
-                    <MaterialIcons name="delete" color={"#ff6b6b"} size={20}></MaterialIcons>
+                    <MaterialIcons name="delete" color={Colors.error} size={20}></MaterialIcons>
                   </View>
-                  <Text style={[styles.accountText, { color: "#ff6b6b" }]}>
+                  <Text style={[styles.accountText, { color: Colors.error }]}>
                     Supprimer le Compte
                   </Text>
                 </HStack>
@@ -240,23 +275,23 @@ function AccountBody({ onSubmit }: { onSubmit: () => void }) {
 
         <FormControl style={styles.formControlStyle} >
           <FormControlLabel>
-            <FormControlLabelText style={{ color: "#DBE2EF" }}>{emailLabel}</FormControlLabelText>
+            <FormControlLabelText style={{ color: Colors.lightBlue }}>{emailLabel}</FormControlLabelText>
           </FormControlLabel>
-          <Input style={{ borderColor: "#3F72AF", borderRadius: 10 }}>
+          <Input style={{ borderColor: Colors.primary, borderRadius: 10 }}>
             <InputField style={styles.inputFieldStyle} onChangeText={setAccountEmail} placeholder={emailPlaceholder} defaultValue={accountEmail!}></InputField>
           </Input>
         </FormControl>
 
         <FormControl style={styles.formControlStyle} >
           <FormControlLabel>
-            <FormControlLabelText style={{ color: "#DBE2EF" }}>{passwordLabel}</FormControlLabelText>
+            <FormControlLabelText style={{ color: Colors.lightBlue }}>{passwordLabel}</FormControlLabelText>
           </FormControlLabel>
-          <Input style={{ borderColor: "#3F72AF", borderRadius: 10 }}>
+          <Input style={{ borderColor: Colors.primary, borderRadius: 10 }}>
             <InputField style={styles.inputFieldStyle} onChangeText={setAccountPassword} type="password" placeholder={passwordPlaceholder} defaultValue={passwordExemple}></InputField>
           </Input>
         </FormControl>
         <Button style={styles.submitButtonStyle} onPress={updateUserAccountInfo}>
-          {spinnerIsVisible ? <ButtonSpinner color={"white"} /> : <ButtonText>{buttonLable}</ButtonText>}
+          {spinnerIsVisible ? <ButtonSpinner color={Colors.white} /> : <ButtonText>{buttonLable}</ButtonText>}
         </Button>
       </VStack>
     </View>
@@ -315,30 +350,30 @@ function LoginScreen() {
           <Divider style={styles.settingsBodyHeaderDividerStyle}></Divider>
           <FormControl style={styles.formControlStyle}>
             <FormControlLabel>
-              <FormControlLabelText style={{ color: "#DBE2EF" }}>{emailLabel}</FormControlLabelText>
+              <FormControlLabelText style={{ color: Colors.lightBlue }}>{emailLabel}</FormControlLabelText>
             </FormControlLabel>
-            <Input style={{ borderColor: "#3F72AF", borderRadius: 10 }}>
+            <Input style={{ borderColor: Colors.primary, borderRadius: 10 }}>
               <InputField style={styles.inputFieldStyle} onChangeText={setEmail} value={email} type="text" placeholder={emailPlaceholder}></InputField>
             </Input>
           </FormControl>
 
           <FormControl style={styles.formControlStyle}>
             <FormControlLabel>
-              <FormControlLabelText style={{ color: "#DBE2EF" }}>{passwordLabel}</FormControlLabelText>
+              <FormControlLabelText style={{ color: Colors.lightBlue }}>{passwordLabel}</FormControlLabelText>
             </FormControlLabel>
-            <Input style={{ borderColor: "#3F72AF", borderRadius: 10 }}>
+            <Input style={{ borderColor: Colors.primary, borderRadius: 10 }}>
               <InputField style={styles.inputFieldStyle} onChangeText={setPassword} value={password} type="password" placeholder={passwordPlaceholder}>
               </InputField>
             </Input>
           </FormControl>
           <Button onPress={handleLogin} style={styles.submitButtonStyle}>
             <ButtonText>Se Connecter</ButtonText>
-            {loader && <ButtonSpinner color={"white"}></ButtonSpinner>}
+            {loader && <ButtonSpinner color={Colors.white}></ButtonSpinner>}
           </Button>
           <Pressable onPress={() => {
             setRegisterSectionVisibility(true)
           }}>
-            <Text style={{ color: "#3F72AF", marginTop: 10 }}>{registerLabel}</Text>
+            <Text style={{ color: Colors.primary, marginTop: 10 }}>{registerLabel}</Text>
           </Pressable>
         </View> : <RegisterScreen setRegisterVisibility={() => setRegisterSectionVisibility(false)} />
       }
@@ -394,18 +429,18 @@ function RegisterScreen({ setRegisterVisibility }: { setRegisterVisibility: () =
       <Divider style={styles.settingsBodyHeaderDividerStyle}></Divider>
       <FormControl style={styles.formControlStyle}>
         <FormControlLabel>
-          <FormControlLabelText style={{ color: "#DBE2EF" }}>{emailLabel}</FormControlLabelText>
+          <FormControlLabelText style={{ color: Colors.lightBlue }}>{emailLabel}</FormControlLabelText>
         </FormControlLabel>
-        <Input style={{ borderColor: "#3F72AF", borderRadius: 10 }}>
+        <Input style={{ borderColor: Colors.primary, borderRadius: 10 }}>
           <InputField style={styles.inputFieldStyle} onChangeText={setEmail} value={email} type="text" placeholder={emailPlaceholder}></InputField>
         </Input>
       </FormControl>
 
       <FormControl style={styles.formControlStyle}>
         <FormControlLabel>
-          <FormControlLabelText style={{ color: "#DBE2EF" }}>{passwordLabel}</FormControlLabelText>
+          <FormControlLabelText style={{ color: Colors.lightBlue }}>{passwordLabel}</FormControlLabelText>
         </FormControlLabel>
-        <Input style={{ borderColor: "#3F72AF", borderRadius: 10 }}>
+        <Input style={{ borderColor: Colors.primary, borderRadius: 10 }}>
           <InputField style={styles.inputFieldStyle} onChangeText={setPassword} defaultValue={password} type="password" placeholder={passwordPlaceholder}>
           </InputField>
         </Input>
@@ -413,9 +448,9 @@ function RegisterScreen({ setRegisterVisibility }: { setRegisterVisibility: () =
 
       <FormControl style={styles.formControlStyle}>
         <FormControlLabel>
-          <FormControlLabelText style={{ color: "#DBE2EF" }}>{passwordConfirmLabel}</FormControlLabelText>
+          <FormControlLabelText style={{ color: Colors.lightBlue }}>{passwordConfirmLabel}</FormControlLabelText>
         </FormControlLabel>
-        <Input style={{ borderColor: "#3F72AF", borderRadius: 10 }}>
+        <Input style={{ borderColor: Colors.primary, borderRadius: 10 }}>
           <InputField style={styles.inputFieldStyle} onChangeText={setPasswordConfirm} defaultValue={passwordConfirm} type="password" placeholder={passwordConfirmPlaceholder}>
           </InputField>
         </Input>
@@ -423,22 +458,48 @@ function RegisterScreen({ setRegisterVisibility }: { setRegisterVisibility: () =
 
       <Button onPress={handleRegister} style={styles.submitButtonStyle}>
         <ButtonText>Se Connecter</ButtonText>
-        {loader && <ButtonSpinner color={"white"}></ButtonSpinner>}
+        {loader && <ButtonSpinner color={Colors.white}></ButtonSpinner>}
       </Button>
       <Pressable onPress={() => {
         setRegisterVisibility()
       }}>
-        <Text style={{ color: "#3F72AF", marginTop: 10 }}>{loginLabel}</Text>
+        <Text style={{ color: Colors.primary, marginTop: 10 }}>{loginLabel}</Text>
       </Pressable>
     </View>
   )
 }
 
 
+function ProfilePhotoMenu() {
+
+  async function updateProfilePicture() {
+    const uri = await pickImage()
+    if (!uri) return
+
+    const downloadUrl = await uploadProfileImageToCloud(auth.currentUser?.uid, uri)
+
+    await saveUrlToFirestore(auth.currentUser?.uid, downloadUrl)
+
+  }
+
+  return (
+    <View style={styles.profileMenuContainer}>
+      <Pressable onPress={async () => {
+        await updateProfilePicture()
+      }} style={styles.pressableSection}>
+        <Ionicons name="person" color={"black"}></Ionicons>
+        <Text>Choisir une photo</Text>
+      </Pressable>
+    </View>
+  )
+
+}
+
+
 
 const styles = StyleSheet.create({
   accountViewStyle: {
-    backgroundColor: "#112D4E", // Keeping the requested background color
+    backgroundColor: Colors.white, // Keeping the requested background color#112D4E
     flex: 1,
     justifyContent: "flex-start",
     alignItems: "center",
@@ -452,13 +513,13 @@ const styles = StyleSheet.create({
     width: "100%",
   },
   accountEmailText: {
-    color: "#F9F7F7",
+    color: Colors.text,
     fontSize: 22,
     fontWeight: "700",
     marginTop: 10,
   },
   accountText: {
-    color: "#F9F7F7",
+    color: Colors.text,
     fontSize: 16,
     fontWeight: "500",
   },
@@ -474,7 +535,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    backgroundColor: "rgba(255, 255, 255, 0.05)",
+    backgroundColor: Colors.transparentPrimary,
     padding: 16,
     borderRadius: 12,
     width: "90%",
@@ -483,7 +544,7 @@ const styles = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 18,
-    backgroundColor: "rgba(63, 114, 175, 0.2)",
+    backgroundColor: Colors.primary,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -505,7 +566,7 @@ const styles = StyleSheet.create({
   submitButtonStyle: {
     marginTop: 20,
     width: "90%",
-    backgroundColor: "#3F72AF",
+    backgroundColor: Colors.primary,
     borderRadius: 12,
     height: 48,
   },
@@ -520,12 +581,12 @@ const styles = StyleSheet.create({
     marginTop: height * 0.08,
   },
   settingsBodyHeaderTextStyle: {
-    color: "white",
+    color: Colors.white,
     fontSize: 20,
     fontWeight: "600",
   },
   settingsBodyHeaderDividerStyle: {
-    backgroundColor: "rgba(255,255,255,0.1)",
+    backgroundColor: "rgba(255, 255, 255, 0)",
     width: "85%",
   },
   switchContainerStyle: {
@@ -536,7 +597,7 @@ const styles = StyleSheet.create({
     gap: 20,
   },
   switchText: {
-    color: "white",
+    color: Colors.white,
     fontSize: 20,
     fontWeight: "600",
   },
@@ -550,7 +611,7 @@ const styles = StyleSheet.create({
     width: "100%",
     height: height,
     gap: 20,
-    backgroundColor: "#112D4E", // Matched to account view
+    backgroundColor: Colors.darkBlue, // Matched to account view
   },
   loginScreenTitleContainer: {
     display: "flex",
@@ -558,14 +619,31 @@ const styles = StyleSheet.create({
   },
   authScreenTitle: {
     fontSize: 32,
-    color: "#F9F7F7",
+    color: Colors.offWhite,
     fontWeight: "700"
   },
 
   // inputs field styles
   inputFieldStyle: {
-    color: "#F9F7F7"
+    color: Colors.offWhite
+  },
+
+
+  //Photo Profile Menu
+  pressableSection: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    backgroundColor: Colors.transparentWhite,
+    padding: 16,
+    borderRadius: 12,
+    width: "90%",
+  },
+
+  profileMenuContainer: {
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+    justifyContent: "center"
   }
-
-
 })

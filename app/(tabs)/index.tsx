@@ -1,19 +1,22 @@
 import { Button, ButtonIcon, ButtonText } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { Divider } from "@/components/ui/divider";
 import { Fab, FabIcon } from "@/components/ui/fab";
 import { FormControl, FormControlLabel, FormControlLabelText } from "@/components/ui/form-control";
 import { HStack } from "@/components/ui/hstack";
-import { EditIcon, FavouriteIcon, MessageCircleIcon } from "@/components/ui/icon";
+import { EditIcon, FavouriteIcon, MessageCircleIcon, ThreeDotsIcon } from "@/components/ui/icon";
 import { Textarea, TextareaInput } from "@/components/ui/textarea";
 import { VStack } from "@/components/ui/vstack";
+import { useActionSheet } from "@/contexts/ActionSheetContext";
+import { useDrawer } from "@/contexts/DrawerContext";
 import { useModal } from "@/contexts/ModalContext";
 import { auth, db } from "@/firebaseConfig";
 import { addDoc, arrayRemove, arrayUnion, collection, doc, getDoc, getDocs, onSnapshot, serverTimestamp, setDoc, updateDoc } from "firebase/firestore";
 import { useEffect, useState } from "react";
-import { Dimensions, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Dimensions, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Colors } from "@/constants/Colors";
 
 const { width, height } = Dimensions.get("window")
-
 
 export default function Index() {
     const { openModal, setModalContent } = useModal()
@@ -72,7 +75,7 @@ export default function Index() {
                     <View style={styles.postsContainerStyle}>
                         {posts?.map(post => {
                             let likes = post.likes || []
-                            return <PostCard press={() => { addToFavorite(post.id, likes) }} key={post.id} content={post.content} likesCount={likes.length}></PostCard>
+                            return <><PostCard press={() => { addToFavorite(post.id, likes) }} key={post.id} content={post.content} likesCount={likes.length}></PostCard><Divider style={styles.postDividerBottomStyle} key={post.id + 1}></Divider></>
                         })}
                     </View>
 
@@ -82,6 +85,7 @@ export default function Index() {
             <Fab style={styles.fabBtnStyle} placement="bottom right" isHovered={false} isDisabled={false} isPressed={false} onPress={showModalF}>
                 <FabIcon as={EditIcon} />
             </Fab>
+
         </>
     )
 }
@@ -133,19 +137,41 @@ function ModalBody() {
 }
 
 
+function DrawerBody() {
+    return (
+        <View>
+            <Pressable><Text>Supprimer l'annonce</Text></Pressable>
+        </View>
+    )
+}
 
-function PostCard(props: any) {
+
+
+export function PostCard(props: any) {
+    const { openActionSheet, setBodyContent } = useActionSheet()
+
+    const showDrawer = () => {
+        setBodyContent(<DrawerBody></DrawerBody>)
+        openActionSheet()
+    }
     return (
         <Card style={styles.postCardStyle} variant="outline">
             <VStack style={styles.cardContainer}>
+
+                <View style={styles.threedDotsBtnStyleContainer}>
+                    <Button onPress={() => { showDrawer() }} style={{ backgroundColor: 'transparent' }}>
+                        <ButtonIcon color="black" as={ThreeDotsIcon}></ButtonIcon>
+                    </Button>
+                </View>
+
                 <View style={styles.postCardTextContainer}>
                     <Text style={styles.postCardContentTextStyle}>{props.content}</Text>
                 </View>
                 <HStack style={styles.postCardActionsContainer}>
-                    <Button variant="outline">
+                    <Button style={{ backgroundColor: 'transparent' }} >
                         <ButtonIcon as={MessageCircleIcon}></ButtonIcon>
                     </Button>
-                    <Button onPress={props.press} variant="outline">
+                    <Button style={{ backgroundColor: 'transparent' }} onPress={props.press} >
                         <ButtonIcon as={FavouriteIcon}></ButtonIcon>
                         <ButtonText style={styles.favouriteNumberTextStyle}>{props.likesCount}</ButtonText>
                     </Button>
@@ -159,7 +185,7 @@ function PostCard(props: any) {
 const styles = StyleSheet.create({
     body: {
         flex: 1,
-        backgroundColor: "#021018", // Deep rich blue/black
+        backgroundColor: Colors.white, // Deep rich blue/black #021018
     },
 
     postsContainerStyle: {
@@ -183,7 +209,7 @@ const styles = StyleSheet.create({
         marginTop: height * 0.1,
         marginRight: 15,
         marginBottom: 15,
-        backgroundColor: "#3F72AF",
+        backgroundColor: Colors.primary,
     },
     textAreaStyle: {
         width: "90%"
@@ -192,22 +218,23 @@ const styles = StyleSheet.create({
     // Post Card 
     postCardStyle: {
         marginVertical: 8,
-        backgroundColor: "#112D4E",
-        borderRadius: 16,
-        borderWidth: 0,
+        backgroundColor: Colors.white,
+        borderRadius: 20,
+        borderWidth: 1,
+        borderColor: Colors.lightBlue,
         padding: 16,
         shadowColor: "#000",
         shadowOffset: {
             width: 0,
-            height: 2,
+            height: 4,
         },
-        shadowOpacity: 0.25,
-        shadowRadius: 3.84,
-        elevation: 5,
+        shadowOpacity: 0.08,
+        shadowRadius: 12,
+        elevation: 3,
     },
 
     postCardContentTextStyle: {
-        color: "#F9F7F7",
+        color: Colors.text, //#F9F7F7
         fontFamily: "sans-serif",
         fontSize: 16,
         lineHeight: 24,
@@ -227,7 +254,7 @@ const styles = StyleSheet.create({
         width: "100%",
         gap: 16,
         borderTopWidth: 1,
-        borderTopColor: "rgba(255,255,255,0.1)",
+        borderTopColor: Colors.lightBlue,
         paddingTop: 12,
         marginTop: 12,
     },
@@ -235,8 +262,21 @@ const styles = StyleSheet.create({
         width: "100%",
     },
     favouriteNumberTextStyle: {
-        color: "#DBE2EF",
+        color: Colors.text,
         fontWeight: "600",
         marginLeft: 4,
+    },
+    threedDotsBtnStyleContainer: {
+        display: "flex",
+        flexDirection: "row",
+        justifyContent: "flex-end"
+    },
+    postDividerBottomStyle: {
+        backgroundColor: Colors.lightBlue,
+        height: 1,
+        width: "90%",
+        alignSelf: "center",
+        marginVertical: 8,
+        opacity: 0.5
     }
 })

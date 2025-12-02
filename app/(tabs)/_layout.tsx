@@ -4,14 +4,14 @@ import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import Feather from '@expo/vector-icons/Feather';
 
 export default function TabsLayout() {
-  const homeIcon = () => <Ionicons size={30} name="home" color={"white"} />
-  const personIcon = () => <Ionicons size={30} name="person" color={"white"} />
+  const homeIcon = () => <Ionicons size={25} name="home" color={"#565656"} />
+  const personIcon = () => <Ionicons size={25} name="person" color={"#565656"} />
 
-  const searchIcon = () => <Ionicons size={30} name="search" color={"white"} />
+  const searchIcon = () => <Ionicons size={25} name="search" color={"#565656"} />
 
-  const postsIcon = () => <MaterialCommunityIcons size={30} name="post" color={"white"} />
+  const postsIcon = () => <MaterialCommunityIcons size={25} name="post" color={"#565656"} />
 
-  const messageIcon = () => <Feather size={30} name="send" color={"white"} />
+  const messageIcon = () => <Feather size={25} name="send" color={"#565656"} />
 
   return (
     <Tabs
@@ -19,9 +19,9 @@ export default function TabsLayout() {
         tabBarInactiveTintColor: "white",
         tabBarActiveTintColor: "black",
         tabBarStyle: {
-          backgroundColor: "#112D4E",
-          paddingTop: 13,
-          height: 100
+          backgroundColor: "white", //#112D4E
+          paddingTop: 6,
+          height: 80
         },
         tabBarLabelStyle: {
           fontSize: 12,

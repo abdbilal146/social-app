@@ -1,5 +1,6 @@
-import React, { useEffect, useRef, useState } from 'react';
-import { Modal, View, Pressable, StyleSheet, Animated, Dimensions } from "react-native";
+import React from 'react';
+import { Modal, Pressable, StyleSheet, Dimensions } from "react-native";
+import { Colors } from '@/constants/Colors';
 
 const { width } = Dimensions.get('window');
 const DRAWER_WIDTH = width * 0.6; // Drawer takes 80% of screen width
@@ -37,7 +38,7 @@ const styles = StyleSheet.create({
     drawer: {
         width: DRAWER_WIDTH,
         height: '100%',
-        backgroundColor: '#1c2b21',
+        backgroundColor: Colors.background,
         shadowColor: "#000",
         shadowOffset: {
             width: 2,
