@@ -118,8 +118,8 @@ export default function Account() {
                 <SettingsBody />
               )
               openDrawer()
-            }} variant="outline" size="xl" style={{ borderWidth: 0 }}>
-              <ButtonIcon as={SettingsIcon} color={Colors.lightBlue} />
+            }} variant="outline" style={{ borderWidth: 0 }}>
+              <ButtonIcon as={SettingsIcon} style={styles.settingsIconStyle} color={Colors.lightBlue} />
             </Button>
           </Box>
           {/* Avatar */}
@@ -704,5 +704,11 @@ const styles = StyleSheet.create({
     flexDirection: "column",
     alignItems: "center",
     justifyContent: "center"
+  },
+
+  //settings
+  settingsIconStyle: {
+    width: 30,
+    height: 30
   }
 })

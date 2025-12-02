@@ -2,16 +2,15 @@ import { Button, ButtonIcon, ButtonText } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Divider } from "@/components/ui/divider";
 import { Fab, FabIcon } from "@/components/ui/fab";
-import { FormControl, FormControlLabel, FormControlLabelText } from "@/components/ui/form-control";
+import { FormControl } from "@/components/ui/form-control";
 import { HStack } from "@/components/ui/hstack";
-import { EditIcon, FavouriteIcon, MessageCircleIcon, ThreeDotsIcon } from "@/components/ui/icon";
+import { EditIcon, FavouriteIcon, MessageCircleIcon, PaperclipIcon, ThreeDotsIcon } from "@/components/ui/icon";
 import { Textarea, TextareaInput } from "@/components/ui/textarea";
 import { VStack } from "@/components/ui/vstack";
 import { useActionSheet } from "@/contexts/ActionSheetContext";
-import { useDrawer } from "@/contexts/DrawerContext";
 import { useModal } from "@/contexts/ModalContext";
 import { auth, db } from "@/firebaseConfig";
-import { addDoc, arrayRemove, arrayUnion, collection, doc, getDoc, getDocs, onSnapshot, serverTimestamp, setDoc, updateDoc } from "firebase/firestore";
+import { arrayRemove, arrayUnion, collection, doc, onSnapshot, serverTimestamp, setDoc, updateDoc } from "firebase/firestore";
 import { Fragment, useEffect, useState } from "react";
 import { Dimensions, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { Colors } from "@/constants/Colors";
@@ -19,14 +18,14 @@ import { Colors } from "@/constants/Colors";
 const { width, height } = Dimensions.get("window")
 
 export default function Index() {
-    const { openModal, setModalContent } = useModal()
+    const { openActionSheet, setBodyContent } = useActionSheet()
     const [posts, setPosts] = useState<any[]>()
 
     const showModalF = () => {
-        setModalContent(
+        setBodyContent(
             <ModalBody />
         )
-        openModal()
+        openActionSheet()
         console.log("Hello")
     }
 
@@ -92,14 +91,17 @@ export default function Index() {
 
 
 function ModalBody() {
-    const textareaPlaceholder: string = "publier quelque chose"
+    const textareaPlaceholder: string = "Partagez vos pensées, idées ou actualités..."
     const buttonLabel: string = "Publier"
-    const { closeModal } = useModal()
-    const [textareaValue, setTextareaValue] = useState<string>()
+    const imageButtonLabel: string = "Ajouter une photo"
+    const { closeActionSheet } = useActionSheet()
+    const [textareaValue, setTextareaValue] = useState<string>("")
+    const maxCharacters = 500
 
     const addPost = async () => {
-        try {
+        if (!textareaValue || textareaValue.trim().length === 0) return
 
+        try {
             const postRef = collection(db, "posts")
             const newPostRef = doc(postRef)
 
@@ -109,33 +111,64 @@ function ModalBody() {
                 createdAt: serverTimestamp(),
                 content: textareaValue
             })
-
-
         } catch (e) {
             console.log(e)
         } finally {
-            closeModal()
+            closeActionSheet()
         }
     }
 
     return (
         <View style={styles.modalContainerStyle}>
+            <View style={styles.modalHeaderContainer}>
+                <View style={styles.modalHeaderIconContainer}>
+                    <EditIcon color={Colors.primary} />
+                </View>
+                <Text style={styles.modalHeaderTitle}>Créer une publication</Text>
+                <Text style={styles.modalHeaderSubtitle}>Partagez quelque chose avec votre communauté</Text>
+            </View>
+
             <FormControl style={styles.textAreaStyle}>
-                <FormControlLabel>
-                    <FormControlLabelText>Publier</FormControlLabelText>
-                </FormControlLabel>
-                <Textarea>
-                    <TextareaInput onChangeText={setTextareaValue} value={textareaValue} placeholder={textareaPlaceholder}></TextareaInput>
+                <Textarea style={styles.modernTextarea}>
+                    <TextareaInput
+                        onChangeText={setTextareaValue}
+                        value={textareaValue}
+                        placeholder={textareaPlaceholder}
+                        style={styles.textareaInput}
+                        maxLength={maxCharacters}
+                        multiline
+                        numberOfLines={6}
+                    />
                 </Textarea>
+                <View style={styles.characterCountContainer}>
+                    <Text style={styles.characterCountText}>
+                        {textareaValue?.length || 0} / {maxCharacters}
+                    </Text>
+                </View>
             </FormControl>
-            <Button onPress={addPost}>
-                <ButtonText>{buttonLabel}</ButtonText>
+
+            <Button
+                onPress={addPost}
+                style={styles.modernPublishButton}
+                isDisabled={!textareaValue || textareaValue.trim().length === 0}
+            >
+                <ButtonText style={styles.publishButtonText}>{buttonLabel}</ButtonText>
+                <ButtonIcon as={EditIcon} color={Colors.white} />
+            </Button>
+
+
+
+            <Button
+                onPress={addPost}
+                style={styles.modernPublishButton}
+                isDisabled={!textareaValue || textareaValue.trim().length === 0}
+            >
+                <ButtonText style={styles.publishButtonText}>{imageButtonLabel}</ButtonText>
+                <ButtonIcon as={PaperclipIcon} color={Colors.white} />
             </Button>
         </View>
-
     )
 }
-
 
 function DrawerBody() {
     return (
@@ -185,7 +218,7 @@ export function PostCard(props: any) {
 const styles = StyleSheet.create({
     body: {
         flex: 1,
-        backgroundColor: Colors.white, // Deep rich blue/black #021018
+        backgroundColor: Colors.white,
     },
 
     postsContainerStyle: {
@@ -194,11 +227,35 @@ const styles = StyleSheet.create({
     },
     modalContainerStyle: {
         width: "100%",
-        display: "flex",
-        flexDirection: "column",
+        paddingHorizontal: 20,
+        paddingVertical: 24,
+    },
+    modalHeaderContainer: {
+        alignItems: "center",
+        marginBottom: 24,
+        gap: 8,
+    },
+    modalHeaderIconContainer: {
+        width: 64,
+        height: 64,
+        borderRadius: 32,
+        backgroundColor: `${Colors.primary}15`,
         alignItems: "center",
         justifyContent: "center",
-        gap: 20,
+        marginBottom: 8,
+    },
+    modalHeaderTitle: {
+        fontSize: 24,
+        fontWeight: "700",
+        color: Colors.text,
+        textAlign: "center",
+    },
+    modalHeaderSubtitle: {
+        fontSize: 14,
+        fontWeight: "400",
+        color: Colors.text,
+        opacity: 0.6,
+        textAlign: "center",
     },
     fabBtnStyle: {
         width: width * 0.15,
@@ -212,7 +269,56 @@ const styles = StyleSheet.create({
         backgroundColor: Colors.primary,
     },
     textAreaStyle: {
-        width: "90%"
+        width: "100%",
+        marginBottom: 12,
+    },
+    modernTextarea: {
+        minHeight: 150,
+        borderRadius: 16,
+        borderWidth: 2,
+        borderColor: Colors.lightBlue,
+        backgroundColor: Colors.white,
+        padding: 12,
+    },
+    textareaInput: {
+        fontSize: 16,
+        color: Colors.text,
+        lineHeight: 24,
+    },
+    characterCountContainer: {
+        alignItems: "flex-end",
+        marginTop: 8,
+        paddingRight: 4,
+    },
+    characterCountText: {
+        fontSize: 12,
+        color: Colors.text,
+        opacity: 0.5,
+        fontWeight: "500",
+    },
+    modernPublishButton: {
+        backgroundColor: Colors.primary,
+        marginTop: 40,
+        borderRadius: 12,
+        paddingVertical: 14,
+        paddingHorizontal: 24,
+        flexDirection: "row",
+        alignItems: "center",
+        justifyContent: "center",
+        shadowColor: Colors.primary,
+        shadowOffset: {
+            width: 0,
+            height: 4,
+        },
+        shadowOpacity: 0.3,
+        shadowRadius: 8,
+        elevation: 6,
+        height: height * 0.05
+    },
+    publishButtonText: {
+        fontSize: 16,
+        fontWeight: "700",
+        color: Colors.white,
     },
 
     // Post Card 
@@ -234,7 +340,7 @@ const styles = StyleSheet.create({
     },
 
     postCardContentTextStyle: {
-        color: Colors.text, //#F9F7F7
+        color: Colors.text,
         fontFamily: "sans-serif",
         fontSize: 16,
         lineHeight: 24,

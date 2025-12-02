@@ -219,17 +219,24 @@ function DialogScreen({ chatId, receiverId }: { chatId: string, receiverId: stri
         <Animated.View entering={SlideInRight} exiting={SlideOutRight} style={{ flex: 1 }}>
             <View style={styles.diaolgScreenHeader}>
                 <HStack style={styles.dialogScreenHeaderContentContainer}>
-                    <Text>{receiverData ? `${receiverData.name || ""} ${receiverData.familyName || ""}`.trim() || receiverData.email : "Chargement..."}</Text>
-                    <Avatar>
-                        <AvatarImage
-                            source={{
-                                uri: receiverData?.profilePictureUrl
-                            }}
-                        ></AvatarImage>
-                    </Avatar>
+                    <View style={styles.headerUserInfo}>
+                        <Avatar style={styles.headerAvatar}>
+                            <AvatarImage
+                                source={{
+                                    uri: receiverData?.profilePictureUrl || 'https://upload.wikimedia.org/wikipedia/commons/8/89/Portrait_Placeholder.png'
+                                }}
+                            />
+                        </Avatar>
+                        <View style={styles.headerTextContainer}>
+                            <Text style={styles.headerName}>
+                                {receiverData ? `${receiverData.name || ""} ${receiverData.familyName || ""}`.trim() || receiverData.email : "Chargement..."}
+                            </Text>
+                            <Text style={styles.headerStatus}>En ligne</Text>
+                        </View>
+                    </View>
                 </HStack>
-                <Divider></Divider>
-            </View>
+
+            </View >
             <View style={styles.content}>
                 <FlatList
                     data={messages}
@@ -266,12 +273,12 @@ function DialogScreen({ chatId, receiverId }: { chatId: string, receiverId: stri
                             />
                         </Input>
                     </FormControl>
-                    <Button onPress={onSend}>
+                    <Button style={styles.sendBtn} onPress={onSend}>
                         <ButtonIcon as={ArrowRightIcon}></ButtonIcon>
                     </Button>
                 </View>
             </KeyboardAvoidingView>
-        </Animated.View>
+        </Animated.View >
     )
 }
 
@@ -306,16 +313,53 @@ const styles = StyleSheet.create({
         backgroundColor: Colors.primary
     },
     diaolgScreenHeader: {
-        marginTop: height * 0.1
-
+        marginTop: height * 0.1,
+        backgroundColor: Colors.primary,
+        paddingVertical: 16,
+        paddingHorizontal: 16,
+        borderRadius: 24,
+        shadowColor: "#000",
+        shadowOffset: {
+            width: 0,
+            height: 4,
+        },
+        shadowOpacity: 0.15,
+        shadowRadius: 8,
+        elevation: 8,
     },
     dialogScreenHeaderContentContainer: {
         display: "flex",
         alignItems: "center",
-        justifyContent: "space-between",
-        paddingBottom: 10,
-        marginRight: 10,
-        marginLeft: 10
+        justifyContent: "flex-start",
+    },
+    headerUserInfo: {
+        display: "flex",
+        flexDirection: "row",
+        alignItems: "center",
+        gap: 14,
+    },
+    headerAvatar: {
+        width: 56,
+        height: 56,
+        borderRadius: 28,
+        borderWidth: 3,
+        borderColor: "rgba(255, 255, 255, 0.3)",
+    },
+    headerTextContainer: {
+        display: "flex",
+        flexDirection: "column",
+        gap: 2,
+    },
+    headerName: {
+        fontSize: 18,
+        fontWeight: "700",
+        color: Colors.white,
+        letterSpacing: 0.3,
+    },
+    headerStatus: {
+        fontSize: 13,
+        fontWeight: "500",
+        color: "rgba(255, 255, 255, 0.75)",
     },
     content: {
         flex: 1,
@@ -369,5 +413,8 @@ const styles = StyleSheet.create({
     dividerTextStyle: {
         color: Colors.black,
         fontWeight: 600
+    },
+    sendBtn: {
+
     }
 })
