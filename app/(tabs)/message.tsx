@@ -6,7 +6,7 @@ import { Input, InputField } from "@/components/ui/input";
 import { auth } from "@/firebaseConfig";
 import { DocumentData } from "firebase/firestore";
 import { useEffect, useState } from "react";
-import { StyleSheet, View, KeyboardAvoidingView, Platform, FlatList, Text, Dimensions, Pressable, BackHandler } from "react-native";
+import { StyleSheet, View, KeyboardAvoidingView, Platform, FlatList, Text, Dimensions, Pressable, BackHandler, SafeAreaView } from "react-native";
 import Animated, { FadeIn, FadeOut, SlideInRight, SlideOutRight, FadeInDown, FadeInUp } from "react-native-reanimated";
 
 const { height, width } = Dimensions.get("window")
@@ -205,71 +205,115 @@ function DialogScreen({ chatId, receiverId }: { chatId: string, receiverId: stri
     }
 
     return (
-        <Animated.View entering={SlideInRight} exiting={SlideOutRight} style={{ flex: 1 }}>
-            <View style={styles.diaolgScreenHeader}>
-                <HStack style={styles.dialogScreenHeaderContentContainer}>
-                    <View style={styles.headerUserInfo}>
-                        <Pressable onPress={() => { navigateToASpecificRoute("/userprofile", receiverId, receiverData?.profilePictureUrl, receiverData?.familyName, receiverData?.name) }}>
-                            <Avatar style={styles.headerAvatar}>
-                                <AvatarImage
-                                    source={{
-                                        uri: receiverData?.profilePictureUrl || 'https://upload.wikimedia.org/wikipedia/commons/8/89/Portrait_Placeholder.png'
-                                    }}
-                                />
-                            </Avatar>
-                        </Pressable>
-                        <View style={styles.headerTextContainer}>
-                            <Text style={styles.headerName}>
-                                {receiverData ? `${receiverData.name || ""} ${receiverData.familyName || ""}`.trim() || receiverData.email : "Chargement..."}
-                            </Text>
-                            <Text style={styles.headerStatus}>En ligne</Text>
-                        </View>
-                    </View>
-                </HStack>
-
-            </View >
-            <View style={styles.content}>
-                <FlatList
-                    data={messages}
-                    keyExtractor={(item) => item.id}
-                    renderItem={({ item, index }) => (
-                        <Animated.View entering={FadeInUp.delay(index * 50)} style={{
-                            padding: 10,
-                            alignSelf: item.senderId === auth.currentUser?.uid ? 'flex-end' : 'flex-start',
-                            backgroundColor: item.senderId === auth.currentUser?.uid ? Colors.primary : 'rgba(107, 17, 17, 0.86)',
-                            borderRadius: 10,
-                            margin: 5,
-                            maxWidth: '80%'
-                        }}>
-                            <Text style={{ color: Colors.white }}>{item.text}</Text>
-                        </Animated.View>
-                    )}
-                />
-            </View>
+        <SafeAreaView style={{ flex: 1, backgroundColor: '#fff' }}>
             <KeyboardAvoidingView
-                behavior={Platform.OS === "ios" ? "padding" : "height"}
-                keyboardVerticalOffset={100} // Adjust based on tab bar height
+                style={{ flex: 1 }}
+                behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+                keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
             >
-                <View style={styles.inputContainer}>
-                    <FormControl style={styles.formControl}>
-                        <Input style={styles.input}>
-                            <InputField
-                                placeholder="Message..."
-                                placeholderTextColor="#9BA4B5"
-                                style={styles.inputField}
-                                value={text}
-                                onChangeText={setText}
-                                onSubmitEditing={onSend}
-                                returnKeyType="send"
-                            />
-                        </Input>
-                    </FormControl>
-                    <Button style={styles.sendBtn} onPress={onSend}>
-                        <ButtonIcon as={ArrowRightIcon}></ButtonIcon>
-                    </Button>
-                </View>
+                <Animated.View
+                    entering={SlideInRight}
+                    exiting={SlideOutRight}
+                    style={{ flex: 1 }}
+                >
+                    {/* HEADER */}
+                    <View style={styles.diaolgScreenHeader}>
+                        <HStack style={styles.dialogScreenHeaderContentContainer}>
+                            <View style={styles.headerUserInfo}>
+                                <Pressable
+                                    onPress={() =>
+                                        navigateToASpecificRoute(
+                                            '/userprofile',
+                                            receiverId,
+                                            receiverData?.profilePictureUrl,
+                                            receiverData?.familyName,
+                                            receiverData?.name
+                                        )
+                                    }
+                                >
+                                    <Avatar style={styles.headerAvatar}>
+                                        <AvatarImage
+                                            source={{
+                                                uri:
+                                                    receiverData?.profilePictureUrl ||
+                                                    'https://upload.wikimedia.org/wikipedia/commons/8/89/Portrait_Placeholder.png',
+                                            }}
+                                        />
+                                    </Avatar>
+                                </Pressable>
+                                <View style={styles.headerTextContainer}>
+                                    <Text style={styles.headerName}>
+                                        {receiverData
+                                            ? `${receiverData.name || ''} ${receiverData.familyName || ''}`.trim() ||
+                                            receiverData.email
+                                            : 'Chargement...'}
+                                    </Text>
+                                    <Text style={styles.headerStatus}>En ligne</Text>
+                                </View>
+                            </View>
+                        </HStack>
+                    </View>
+
+                    {/* MESSAGES */}
+                    <View style={{ flex: 1 }}>
+                        <FlatList
+                            inverted
+                            data={[...messages].reverse()}
+                            keyExtractor={(item) => item.id}
+                            contentContainerStyle={{ padding: 10 }}
+                            renderItem={({ item, index }) => (
+                                <Animated.View
+                                    entering={FadeInUp.delay(index * 50)}
+                                    style={{
+                                        alignSelf:
+                                            item.senderId === auth.currentUser?.uid
+                                                ? 'flex-end'
+                                                : 'flex-start',
+                                        backgroundColor:
+                                            item.senderId === auth.currentUser?.uid
+                                                ? Colors.primary
+                                                : 'rgba(107, 17, 17, 0.86)',
+                                        padding: 12,
+                                        borderRadius: 16,
+                                        marginVertical: 4,
+                                        maxWidth: '80%',
+                                    }}
+                                >
+                                    <Text style={{ color: Colors.white, fontSize: 16 }}>
+                                        {item.text}
+                                    </Text>
+                                </Animated.View>
+                            )}
+                        />
+                    </View>
+
+                    {/* INPUT EN BAS */}
+                    <View style={styles.inputContainer}>
+                        <FormControl style={styles.formControl}>
+                            <Input style={styles.input}>
+                                <InputField
+                                    placeholder="Message..."
+                                    placeholderTextColor="#9BA4B5"
+                                    style={styles.inputField}
+                                    value={text}
+                                    onChangeText={setText}
+                                    onSubmitEditing={onSend}
+                                    returnKeyType="send"
+                                />
+                            </Input>
+                        </FormControl>
+
+                        <Button
+                            style={styles.sendBtn}
+                            onPress={onSend}
+                            isDisabled={!text.trim()}
+                        >
+                            <ButtonIcon as={ArrowRightIcon} />
+                        </Button>
+                    </View>
+                </Animated.View>
             </KeyboardAvoidingView>
-        </Animated.View >
+        </SafeAreaView>
     )
 }
 

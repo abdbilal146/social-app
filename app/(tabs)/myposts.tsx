@@ -1,16 +1,18 @@
-import { Dimensions, ScrollView, StyleSheet, View } from "react-native"
+import { Dimensions, FlatList, StyleSheet, Text, View } from "react-native"
 import { PostCard } from "."
 import { useEffect, useState } from "react"
 import { auth } from "@/firebaseConfig"
 import { useActionSheet } from "@/contexts/ActionSheetContext"
 import { deletePost, listenToUserPosts, togglePostLike } from "@/db/posts"
-
+import { Colors } from "@/constants/Colors"
+import Animated, { FadeInDown, Layout } from "react-native-reanimated"
+import { Ionicons } from "@expo/vector-icons"
 
 const { height, width } = Dimensions.get("window")
 
 export default function MyPosts() {
 
-    const [posts, setPosts] = useState<any[]>()
+    const [posts, setPosts] = useState<any[]>([])
     const { closeActionSheet } = useActionSheet()
     const [deletePostBtnSpinner, setDeletePostBtnSpinner] = useState<boolean>(false)
 
@@ -21,7 +23,6 @@ export default function MyPosts() {
 
         const unsubscribe = listenToUserPosts(uid, (userPosts) => {
             setPosts(userPosts)
-            console.log(userPosts)
         })
 
         return () => unsubscribe()
@@ -51,31 +52,90 @@ export default function MyPosts() {
         }
     }
 
+    const renderPostItem = ({ item, index }: { item: any, index: number }) => {
+        let likes = item.likes || []
+        return (
+            <Animated.View
+                entering={FadeInDown.delay(index * 100).springify()}
+                layout={Layout.springify()}
+                style={styles.postWrapper}
+            >
+                <PostCard
+                    btnSpinner={deletePostBtnSpinner}
+                    onDeletePostPress={() => { deletePostFunc(item.id) }}
+                    press={() => { addToFavorite(item.id, likes) }}
+                    content={item.content}
+                    likesCount={likes.length}
+                />
+            </Animated.View>
+        )
+    }
+
     return (
-        <>
-            <ScrollView style={styles.body}>
-                <View style={styles.body}>
-                    <View style={styles.postsContainerStyle}>
-                        {posts?.map(post => {
-                            let likes = post.likes || []
-                            return <PostCard btnSpinner={deletePostBtnSpinner} onDeletePostPress={() => { deletePostFunc(post.id) }} press={() => { addToFavorite(post.id, likes) }} key={post.id} content={post.content} likesCount={likes.length}></PostCard>
-                        })}
+        <View style={styles.container}>
+            <View style={styles.header}>
+                <Text style={styles.headerTitle}>Mes Posts</Text>
+            </View>
+
+            <FlatList
+                data={posts}
+                keyExtractor={(item) => item.id}
+                renderItem={renderPostItem}
+                contentContainerStyle={styles.listContent}
+                showsVerticalScrollIndicator={false}
+                ListEmptyComponent={
+                    <View style={styles.emptyContainer}>
+                        <Ionicons name="images-outline" size={64} color={Colors.text} style={{ opacity: 0.3 }} />
+                        <Text style={styles.emptyText}>Vous n'avez encore rien posté.</Text>
+                        <Text style={styles.emptySubText}>Partagez votre premier moment !</Text>
                     </View>
-                </View>
-            </ScrollView>
-        </>
+                }
+            />
+        </View>
     )
 }
 
 
 const styles = StyleSheet.create({
-    body: {
+    container: {
         flex: 1,
-        backgroundColor: "white", // Deep rich blue/black
+        backgroundColor: Colors.offWhite,
     },
-
-    postsContainerStyle: {
-        marginTop: height * 0.1,
-        paddingHorizontal: 16,
+    header: {
+        paddingTop: height * 0.08,
+        paddingBottom: 20,
+        paddingHorizontal: 20,
+        backgroundColor: Colors.white,
+        borderBottomWidth: 1,
+        borderBottomColor: "rgba(0,0,0,0.05)",
+        zIndex: 10,
     },
+    headerTitle: {
+        fontSize: 28,
+        fontWeight: "700",
+        color: Colors.darkBlue,
+    },
+    listContent: {
+        padding: 16,
+        paddingBottom: 100,
+    },
+    postWrapper: {
+        marginBottom: 16,
+    },
+    emptyContainer: {
+        alignItems: "center",
+        justifyContent: "center",
+        marginTop: height * 0.15,
+        gap: 12,
+    },
+    emptyText: {
+        fontSize: 18,
+        fontWeight: "600",
+        color: Colors.text,
+        marginTop: 10,
+    },
+    emptySubText: {
+        fontSize: 14,
+        color: "#999",
+    }
 })

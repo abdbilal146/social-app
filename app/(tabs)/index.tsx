@@ -8,32 +8,31 @@ import { EditIcon, FavouriteIcon, MessageCircleIcon, PaperclipIcon, ThreeDotsIco
 import { Textarea, TextareaInput } from "@/components/ui/textarea";
 import { VStack } from "@/components/ui/vstack";
 import { useActionSheet } from "@/contexts/ActionSheetContext";
-import { useModal } from "@/contexts/ModalContext";
 import { auth } from "@/firebaseConfig";
 import { createPost, listenToAllPosts, togglePostLike } from "@/db/posts";
-import { Fragment, useEffect, useState } from "react";
-import { Dimensions, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { useEffect, useState } from "react";
+import { Dimensions, FlatList, Pressable, StyleSheet, Text, View } from "react-native";
 import { Colors } from "@/constants/Colors";
 import { Spinner } from "@/components/ui/spinner";
+import Animated, { FadeInDown, Layout } from "react-native-reanimated";
+import { Ionicons } from "@expo/vector-icons";
 
 const { width, height } = Dimensions.get("window")
 
 export default function Index() {
     const { openActionSheet, setBodyContent } = useActionSheet()
-    const [posts, setPosts] = useState<any[]>()
+    const [posts, setPosts] = useState<any[]>([])
 
     const showModalF = () => {
         setBodyContent(
             <ModalBody />
         )
         openActionSheet()
-        console.log("Hello")
     }
 
     useEffect(() => {
         const unsubscribe = listenToAllPosts((postsData) => {
             setPosts(postsData)
-            console.log(postsData)
         })
 
         return () => unsubscribe()
@@ -51,26 +50,54 @@ export default function Index() {
         }
     }
 
+    const renderPostItem = ({ item, index }: { item: any, index: number }) => {
+        let likes = item.likes || []
+        return (
+            <Animated.View
+                entering={FadeInDown.delay(index * 100).springify()}
+                layout={Layout.springify()}
+                style={styles.postWrapper}
+            >
+                <PostCard
+                    btnSpinner={false}
+                    onDeletePostPress={() => { console.log("Delete functionality restricted on feed") }}
+                    press={() => { addToFavorite(item.id, likes) }}
+                    content={item.content}
+                    likesCount={likes.length}
+                />
+            </Animated.View>
+        )
+    }
+
     return (
-        <>
-            <ScrollView style={styles.body}>
-                <View style={styles.body}>
+        <View style={styles.container}>
+            <View style={styles.header}>
+                <Text style={styles.headerTitle}>Fil d'actualité</Text>
+            </View>
 
-                    <View style={styles.postsContainerStyle}>
-                        {posts?.map(post => {
-                            let likes = post.likes || []
-                            return <Fragment key={post.id}><PostCard btnSpinner={false} onDeletePostPress={() => { console.log("Hellow world") }} press={() => { addToFavorite(post.id, likes) }} content={post.content} likesCount={likes.length}></PostCard><Divider style={styles.postDividerBottomStyle}></Divider></Fragment>
-                        })}
+            <FlatList
+                data={posts}
+                keyExtractor={(item) => item.id}
+                renderItem={renderPostItem}
+                contentContainerStyle={styles.listContent}
+                showsVerticalScrollIndicator={false}
+                ListEmptyComponent={
+                    <View style={styles.emptyContainer}>
+                        <Ionicons name="newspaper-outline" size={64} color={Colors.text} style={{ opacity: 0.3 }} />
+                        <Text style={styles.emptyText}>Aucune publication pour le moment.</Text>
+                        <Text style={styles.emptySubText}>Soyez le premier à publier !</Text>
                     </View>
+                }
+            />
 
-
-                </View>
-            </ScrollView>
-            <Fab style={styles.fabBtnStyle} placement="bottom right" isHovered={false} isDisabled={false} isPressed={false} onPress={showModalF}>
-                <FabIcon as={EditIcon} />
+            <Fab
+                style={styles.fabBtnStyle}
+                placement="bottom right"
+                onPress={showModalF}
+            >
+                <FabIcon as={EditIcon} color={Colors.white} />
             </Fab>
-
-        </>
+        </View>
     )
 }
 
@@ -133,15 +160,13 @@ function ModalBody() {
                 <ButtonIcon as={EditIcon} color={Colors.white} />
             </Button>
 
-
-
             <Button
                 onPress={addPost}
-                style={styles.modernPublishButton}
+                style={[styles.modernPublishButton, { marginTop: 12, backgroundColor: Colors.lightBlue }]}
                 isDisabled={!textareaValue || textareaValue.trim().length === 0}
             >
-                <ButtonText style={styles.publishButtonText}>{imageButtonLabel}</ButtonText>
-                <ButtonIcon as={PaperclipIcon} color={Colors.white} />
+                <ButtonText style={[styles.publishButtonText, { color: Colors.primary }]}>{imageButtonLabel}</ButtonText>
+                <ButtonIcon as={PaperclipIcon} color={Colors.primary} />
             </Button>
         </View>
     )
@@ -160,7 +185,7 @@ export function PostCard({ content, press, likesCount, onDeletePostPress, btnSpi
 
                 <View style={styles.threedDotsBtnStyleContainer}>
                     <Button onPress={() => { showDrawer() }} style={{ backgroundColor: 'transparent' }}>
-                        <ButtonIcon color="black" as={ThreeDotsIcon}></ButtonIcon>
+                        <ButtonIcon color={Colors.text} as={ThreeDotsIcon}></ButtonIcon>
                     </Button>
                 </View>
 
@@ -169,7 +194,7 @@ export function PostCard({ content, press, likesCount, onDeletePostPress, btnSpi
                 </View>
                 <HStack style={styles.postCardActionsContainer}>
                     <Button style={{ backgroundColor: 'transparent' }} >
-                        <ButtonIcon as={MessageCircleIcon}></ButtonIcon>
+                        <ButtonIcon as={MessageCircleIcon} color={Colors.text}></ButtonIcon>
                     </Button>
                     <Button style={{ backgroundColor: 'transparent' }} onPress={press} >
                         <ButtonIcon as={FavouriteIcon}></ButtonIcon>
@@ -183,12 +208,10 @@ export function PostCard({ content, press, likesCount, onDeletePostPress, btnSpi
 
 
 function PostDrawerBody({ onDeletePostPress, btnSpinner }: { onDeletePostPress: () => void, btnSpinner: boolean }) {
-
-
     return (
         <View style={styles.postDrawerBodyContainerStyle}>
             <Pressable style={styles.postDrawerPressableItemStyle} onPress={() => { onDeletePostPress() }}>{
-                btnSpinner ? <Spinner></Spinner> : <Text style={styles.postDrawerPressableTextStyle}>Supprimer l'annonce</Text>
+                btnSpinner ? <Spinner color={Colors.white} /> : <Text style={styles.postDrawerPressableTextStyle}>Supprimer l'annonce</Text>
             }</Pressable>
         </View>
     )
@@ -196,15 +219,60 @@ function PostDrawerBody({ onDeletePostPress, btnSpinner }: { onDeletePostPress: 
 
 
 const styles = StyleSheet.create({
-    body: {
+    container: {
         flex: 1,
+        backgroundColor: Colors.offWhite,
+    },
+    header: {
+        paddingTop: height * 0.08,
+        paddingBottom: 20,
+        paddingHorizontal: 20,
         backgroundColor: Colors.white,
+        borderBottomWidth: 1,
+        borderBottomColor: "rgba(0,0,0,0.05)",
+        zIndex: 10,
     },
-
-    postsContainerStyle: {
-        marginTop: height * 0.1,
-        paddingHorizontal: 16,
+    headerTitle: {
+        fontSize: 28,
+        fontWeight: "700",
+        color: Colors.darkBlue,
     },
+    listContent: {
+        padding: 16,
+        paddingBottom: 100,
+    },
+    postWrapper: {
+        marginBottom: 16,
+    },
+    emptyContainer: {
+        alignItems: "center",
+        justifyContent: "center",
+        marginTop: height * 0.15,
+        gap: 12,
+    },
+    emptyText: {
+        fontSize: 18,
+        fontWeight: "600",
+        color: Colors.text,
+        marginTop: 10,
+    },
+    emptySubText: {
+        fontSize: 14,
+        color: "#999",
+    },
+    // FAB
+    fabBtnStyle: {
+        backgroundColor: Colors.primary,
+        shadowColor: Colors.primary,
+        shadowOffset: {
+            width: 0,
+            height: 4,
+        },
+        shadowOpacity: 0.3,
+        shadowRadius: 8,
+        elevation: 6,
+    },
+    // Modal
     modalContainerStyle: {
         width: "100%",
         paddingHorizontal: 20,
@@ -237,17 +305,6 @@ const styles = StyleSheet.create({
         opacity: 0.6,
         textAlign: "center",
     },
-    fabBtnStyle: {
-        width: width * 0.15,
-        height: height * 0.07,
-        borderRadius: 100,
-        alignItems: "center",
-        justifyContent: "center",
-        marginTop: height * 0.1,
-        marginRight: 15,
-        marginBottom: 15,
-        backgroundColor: Colors.primary,
-    },
     textAreaStyle: {
         width: "100%",
         marginBottom: 12,
@@ -255,9 +312,9 @@ const styles = StyleSheet.create({
     modernTextarea: {
         minHeight: 150,
         borderRadius: 16,
-        borderWidth: 2,
+        borderWidth: 1,
         borderColor: Colors.lightBlue,
-        backgroundColor: Colors.white,
+        backgroundColor: Colors.offWhite,
         padding: 12,
     },
     textareaInput: {
@@ -278,7 +335,7 @@ const styles = StyleSheet.create({
     },
     modernPublishButton: {
         backgroundColor: Colors.primary,
-        marginTop: 40,
+        marginTop: 20,
         borderRadius: 12,
         paddingVertical: 14,
         paddingHorizontal: 24,
@@ -293,7 +350,7 @@ const styles = StyleSheet.create({
         shadowOpacity: 0.3,
         shadowRadius: 8,
         elevation: 6,
-        height: height * 0.05
+        height: 56
     },
     publishButtonText: {
         fontSize: 16,
@@ -303,19 +360,17 @@ const styles = StyleSheet.create({
 
     // Post Card 
     postCardStyle: {
-        marginVertical: 8,
         backgroundColor: Colors.white,
         borderRadius: 20,
-        borderWidth: 1,
-        borderColor: Colors.lightBlue,
+        borderWidth: 0,
         padding: 16,
         shadowColor: "#000",
         shadowOffset: {
             width: 0,
-            height: 4,
+            height: 2,
         },
-        shadowOpacity: 0.08,
-        shadowRadius: 12,
+        shadowOpacity: 0.05,
+        shadowRadius: 8,
         elevation: 3,
     },
 
@@ -340,7 +395,7 @@ const styles = StyleSheet.create({
         width: "100%",
         gap: 16,
         borderTopWidth: 1,
-        borderTopColor: Colors.lightBlue,
+        borderTopColor: Colors.offWhite,
         paddingTop: 12,
         marginTop: 12,
     },
@@ -357,23 +412,16 @@ const styles = StyleSheet.create({
         flexDirection: "row",
         justifyContent: "flex-end"
     },
-    postDividerBottomStyle: {
-        backgroundColor: Colors.lightBlue,
-        height: 1,
-        width: "90%",
-        alignSelf: "center",
-        marginVertical: 8,
-        opacity: 0.5
-    },
     postDrawerBodyContainerStyle: {
         display: "flex",
         alignItems: "center",
-        justifyContent: "center"
+        justifyContent: "center",
+        padding: 20
     },
     postDrawerPressableItemStyle: {
-        backgroundColor: Colors.primary,
-        width: "90%",
-        height: height * 0.05,
+        backgroundColor: Colors.error,
+        width: "100%",
+        height: 50,
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
@@ -381,6 +429,7 @@ const styles = StyleSheet.create({
     },
     postDrawerPressableTextStyle: {
         fontSize: 16,
+        fontWeight: "600",
         color: Colors.white
     }
 })

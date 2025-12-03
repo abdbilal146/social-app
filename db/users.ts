@@ -1,5 +1,5 @@
 import { db } from "@/firebaseConfig";
-import { collection, deleteDoc, doc, onSnapshot, setDoc, updateDoc, serverTimestamp, arrayUnion } from "firebase/firestore";
+import { collection, deleteDoc, doc, onSnapshot, setDoc, updateDoc, serverTimestamp, arrayUnion, arrayRemove } from "firebase/firestore";
 import { Collections } from "@/constants/Collections";
 
 export const listenToUser = (userId: string, callback: (data: any) => void) => {
@@ -45,8 +45,28 @@ export const deleteUserDocument = async (userId: string) => {
 
 
 export const addfriend = async (userId: string, currentUserId: string) => {
-    const userRef = doc(db, Collections.users, currentUserId);
+    const userRef = doc(db, Collections.users, userId);
     await updateDoc(userRef, {
-        friends: arrayUnion(userId)
+        notifications: arrayUnion("friendRequest" + "_" + currentUserId),
+        friendRequests: arrayUnion(currentUserId)
+    })
+}
+
+
+
+export const removeFriendInvitation = async (currentUserId: string, senderId: string) => {
+    const userRef = doc(db, Collections.users, currentUserId)
+    await updateDoc(userRef, {
+        notifications: arrayRemove("friendRequest" + "_" + senderId),
+        friendRequests: arrayRemove(senderId)
+    })
+
+}
+
+
+export const acceptFriendInvitation = async (currentUserId: string, senderId: string) => {
+    const userRef = doc(db, Collections.users, currentUserId)
+    await updateDoc(userRef, {
+        friends: arrayUnion(senderId)
     })
 }

@@ -136,7 +136,29 @@ export default function Account() {
           </Text>
 
           <Box style={{ marginTop: 60, width: "100%", alignItems: "center" }}>
+
             <VStack style={styles.vStackStyle}>
+              {/* Freinds*/}
+              <Pressable onPress={() => {
+                openActionSheet()
+                setBodyContent(
+                  <AccountBody onSubmit={() => {
+                    setTimeout(() => {
+                      closeActionSheet()
+                    }, 1000)
+                  }} />
+                )
+              }} style={styles.pressableStyle}>
+                <HStack style={{ alignItems: "center", gap: 15 }}>
+                  <View style={styles.iconContainer}>
+                    <Ionicons name="person" color={Colors.lightBlue} size={20}></Ionicons>
+                  </View>
+                  <Text style={styles.accountText}>
+                    Mes Amis
+                  </Text>
+                </HStack>
+                <Ionicons name="chevron-forward" color={Colors.lightBlue} size={20}></Ionicons>
+              </Pressable>
               {/* Mon Compte */}
               <Pressable onPress={() => {
                 openActionSheet()

@@ -13,6 +13,8 @@ export default function TabsLayout() {
 
   const messageIcon = () => <Feather size={25} name="send" color={"#565656"} />
 
+  const notificationsIcon = () => <Ionicons size={25} name="notifications" color={"#565656"}></Ionicons>
+
   return (
     <Tabs
       screenOptions={{
@@ -57,6 +59,13 @@ export default function TabsLayout() {
         options={{
           tabBarIcon: messageIcon,
           title: "Message",
+        }}
+      />
+      <Tabs.Screen
+        name="notifications"
+        options={{
+          tabBarIcon: notificationsIcon,
+          title: "Notifications",
         }}
       />
       <Tabs.Screen

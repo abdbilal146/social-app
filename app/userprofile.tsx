@@ -19,6 +19,7 @@ const { height, width } = Dimensions.get("window")
 export default function UserProfile() {
     const params = useLocalSearchParams()
     const [userInfo, setUserInfo] = useState<any>()
+    const [currentUserInfo, setCurrentUserInfo] = useState<any>()
     const [userPosts, setUserPosts] = useState<any[]>()
     const { closeActionSheet } = useActionSheet()
 
@@ -79,19 +80,21 @@ export default function UserProfile() {
     return (
         <ScrollView >
             <View style={styles.userProfileContainer}>
-                <View>
-                    <Avatar size="2xl">
-                        <AvatarImage
-                            source={{
-                                uri: userInfo?.profilePictureUrl || "https://upload.wikimedia.org/wikipedia/commons/8/89/Portrait_Placeholder.png"
-                            }}
-                        >
+                <View style={styles.userProfileHeader}>
+                    <View>
+                        <Avatar size="2xl">
+                            <AvatarImage
+                                source={{
+                                    uri: userInfo?.profilePictureUrl || "https://upload.wikimedia.org/wikipedia/commons/8/89/Portrait_Placeholder.png"
+                                }}
+                            >
 
-                        </AvatarImage>
-                        <AvatarBadge></AvatarBadge>
-                    </Avatar>
+                            </AvatarImage>
+                            <AvatarBadge></AvatarBadge>
+                        </Avatar>
+                    </View>
+                    <Text style={styles.useProfileNameTextStyle}>{userInfo?.name} {userInfo?.familyName}</Text>
                 </View>
-                <Text style={styles.useProfileNameTextStyle}>{userInfo?.name} {userInfo?.familyName}</Text>
 
                 <Divider style={styles.divider}>
 
@@ -132,12 +135,23 @@ export default function UserProfile() {
 const styles = StyleSheet.create({
     userProfileContainer: {
         backgroundColor: Colors.white,
-        paddingTop: 40,
         display: "flex",
         flexDirection: "column",
         alignItems: "center",
         justifyContent: "center",
         gap: height * 0.03
+    },
+
+    userProfileHeader: {
+        backgroundColor: Colors.border,
+        width: "100%",
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        justifyContent: "center",
+        gap: 12,
+        paddingTop: 40,
+        padding: 20
     },
 
     divider: {
@@ -148,16 +162,20 @@ const styles = StyleSheet.create({
 
     useProfileNameTextStyle: {
         fontSize: 20,
-        fontWeight: 600
+        fontWeight: 600,
+        color: Colors.white
     },
 
     useProfileBtn: {
         height: height * 0.04,
-        width: width * 0.5
+        width: width * 0.5,
+        backgroundColor: Colors.border,
+        borderRadius: 12,
     },
 
     useProfileBtnText: {
-        fontWeight: 600
+        fontWeight: 600,
+        color: Colors.white
     },
 
     postsContainer: {
