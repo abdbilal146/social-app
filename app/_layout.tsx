@@ -1,4 +1,5 @@
 import { Stack } from 'expo-router';
+import * as Notifications from "expo-notifications";
 import { View } from 'react-native';
 import { GluestackUIProvider } from '@/components/ui/gluestack-ui-provider';
 import '@/global.css';
@@ -12,6 +13,16 @@ import { PortalProvider } from '@gluestack-ui/core/lib/esm/overlay/aria';
 
 import { ModalProvider, useModal } from '@/contexts/ModalContext';
 import CustomizeModal from './components/CustomizeModal';
+
+Notifications.setNotificationHandler({
+  handleNotification: async () => ({
+    shouldShowAlert: true,
+    shouldPlaySound: true,
+    shouldSetBadge: false,
+    shouldShowBanner: true,
+    shouldShowList: true,
+  }),
+});
 
 function RootLayoutContent() {
   const { isOpen, closeActionSheet, body } = useActionSheet();

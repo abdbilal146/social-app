@@ -39,6 +39,10 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
         "expo-font",
         "expo-notifications"
     ],
+    notification: {
+        icon: "./assets/icon.png",
+        color: "#3F72AF"
+    },
     scheme: "studentsocialapp",
     extra: {
         "router": {},

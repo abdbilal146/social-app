@@ -14,6 +14,7 @@ import { arrayRemove, arrayUnion, collection, doc, onSnapshot, serverTimestamp, 
 import { Fragment, useEffect, useState } from "react";
 import { Dimensions, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { Colors } from "@/constants/Colors";
+import { Spinner } from "@/components/ui/spinner";
 
 const { width, height } = Dimensions.get("window")
 
@@ -74,7 +75,7 @@ export default function Index() {
                     <View style={styles.postsContainerStyle}>
                         {posts?.map(post => {
                             let likes = post.likes || []
-                            return <Fragment key={post.id}><PostCard press={() => { addToFavorite(post.id, likes) }} content={post.content} likesCount={likes.length}></PostCard><Divider style={styles.postDividerBottomStyle}></Divider></Fragment>
+                            return <Fragment key={post.id}><PostCard btnSpinner={false} onDeletePostPress={() => { console.log("Hellow world") }} press={() => { addToFavorite(post.id, likes) }} content={post.content} likesCount={likes.length}></PostCard><Divider style={styles.postDividerBottomStyle}></Divider></Fragment>
                         })}
                     </View>
 
@@ -170,21 +171,11 @@ function ModalBody() {
     )
 }
 
-function DrawerBody() {
-    return (
-        <View>
-            <Pressable><Text>Supprimer l'annonce</Text></Pressable>
-        </View>
-    )
-}
-
-
-
-export function PostCard(props: any) {
+export function PostCard({ content, press, likesCount, onDeletePostPress, btnSpinner }: { content: string, press: () => void, likesCount: number, onDeletePostPress: () => void, btnSpinner: boolean }) {
     const { openActionSheet, setBodyContent } = useActionSheet()
 
     const showDrawer = () => {
-        setBodyContent(<DrawerBody></DrawerBody>)
+        setBodyContent(<PostDrawerBody btnSpinner={btnSpinner} onDeletePostPress={onDeletePostPress} ></PostDrawerBody>)
         openActionSheet()
     }
     return (
@@ -198,19 +189,32 @@ export function PostCard(props: any) {
                 </View>
 
                 <View style={styles.postCardTextContainer}>
-                    <Text style={styles.postCardContentTextStyle}>{props.content}</Text>
+                    <Text style={styles.postCardContentTextStyle}>{content}</Text>
                 </View>
                 <HStack style={styles.postCardActionsContainer}>
                     <Button style={{ backgroundColor: 'transparent' }} >
                         <ButtonIcon as={MessageCircleIcon}></ButtonIcon>
                     </Button>
-                    <Button style={{ backgroundColor: 'transparent' }} onPress={props.press} >
+                    <Button style={{ backgroundColor: 'transparent' }} onPress={press} >
                         <ButtonIcon as={FavouriteIcon}></ButtonIcon>
-                        <ButtonText style={styles.favouriteNumberTextStyle}>{props.likesCount}</ButtonText>
+                        <ButtonText style={styles.favouriteNumberTextStyle}>{likesCount}</ButtonText>
                     </Button>
                 </HStack>
             </VStack>
         </Card>
+    )
+}
+
+
+function PostDrawerBody({ onDeletePostPress, btnSpinner }: { onDeletePostPress: () => void, btnSpinner: boolean }) {
+
+
+    return (
+        <View style={styles.postDrawerBodyContainerStyle}>
+            <Pressable style={styles.postDrawerPressableItemStyle} onPress={() => { onDeletePostPress() }}>{
+                btnSpinner ? <Spinner></Spinner> : <Text style={styles.postDrawerPressableTextStyle}>Supprimer l'annonce</Text>
+            }</Pressable>
+        </View>
     )
 }
 
@@ -384,5 +388,23 @@ const styles = StyleSheet.create({
         alignSelf: "center",
         marginVertical: 8,
         opacity: 0.5
+    },
+    postDrawerBodyContainerStyle: {
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center"
+    },
+    postDrawerPressableItemStyle: {
+        backgroundColor: Colors.primary,
+        width: "90%",
+        height: height * 0.05,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        borderRadius: 12
+    },
+    postDrawerPressableTextStyle: {
+        fontSize: 16,
+        color: Colors.white
     }
 })

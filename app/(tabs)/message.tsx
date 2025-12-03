@@ -158,7 +158,7 @@ export default function Message() {
                         data={messages}
                         keyExtractor={(item) => item.id}
                         renderItem={renderMessages}
-                        style={{ maxHeight: 200 }}
+                        style={{}}
                     />
                 </Animated.View> : <DialogScreen chatId={chatId!} receiverId={receiverId!}></DialogScreen>
             }

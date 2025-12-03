@@ -1,8 +1,10 @@
 import { Dimensions, ScrollView, StyleSheet, View } from "react-native"
 import { PostCard } from "."
 import { useEffect, useState } from "react"
-import { arrayRemove, arrayUnion, collection, doc, onSnapshot, updateDoc } from "firebase/firestore"
+import { arrayRemove, arrayUnion, collection, deleteDoc, doc, onSnapshot, updateDoc } from "firebase/firestore"
 import { auth, db } from "@/firebaseConfig"
+import { Collections } from "@/constants/Collections"
+import { useActionSheet } from "@/contexts/ActionSheetContext"
 
 
 const { height, width } = Dimensions.get("window")
@@ -10,6 +12,8 @@ const { height, width } = Dimensions.get("window")
 export default function MyPosts() {
 
     const [posts, setPosts] = useState<any[]>()
+    const { closeActionSheet } = useActionSheet()
+    const [deletePostBtnSpinner, setDeletePostBtnSpinner] = useState<boolean>(false)
 
 
     useEffect(() => {
@@ -20,8 +24,12 @@ export default function MyPosts() {
                 id: doc.id,
                 ...doc.data()
             }))
-            setPosts(postsData)
-            console.log(postsData)
+
+            const userPosts = postsData.filter(doc => {
+                return doc.uid === auth.currentUser?.uid
+            })
+            setPosts(userPosts)
+            console.log(userPosts)
         })
 
         return () => unsubscribe()
@@ -49,6 +57,21 @@ export default function MyPosts() {
         }
     }
 
+    const deletePost = async (postId: string) => {
+        const postsCollection = collection(db, Collections.posts)
+        const postRef = doc(postsCollection, postId)
+
+        try {
+            setDeletePostBtnSpinner(true)
+            await deleteDoc(postRef)
+        } catch (e) {
+            console.log(e)
+        } finally {
+            closeActionSheet()
+            setDeletePostBtnSpinner(false)
+        }
+    }
+
     return (
         <>
             <ScrollView style={styles.body}>
@@ -56,7 +79,7 @@ export default function MyPosts() {
                     <View style={styles.postsContainerStyle}>
                         {posts?.map(post => {
                             let likes = post.likes || []
-                            return <PostCard press={() => { addToFavorite(post.id, likes) }} key={post.id} content={post.content} likesCount={likes.length}></PostCard>
+                            return <PostCard btnSpinner={deletePostBtnSpinner} onDeletePostPress={() => { deletePost(post.id) }} press={() => { addToFavorite(post.id, likes) }} key={post.id} content={post.content} likesCount={likes.length}></PostCard>
                         })}
                     </View>
                 </View>
