@@ -1,10 +1,9 @@
 import { Dimensions, ScrollView, StyleSheet, View } from "react-native"
 import { PostCard } from "."
 import { useEffect, useState } from "react"
-import { arrayRemove, arrayUnion, collection, deleteDoc, doc, onSnapshot, updateDoc } from "firebase/firestore"
-import { auth, db } from "@/firebaseConfig"
-import { Collections } from "@/constants/Collections"
+import { auth } from "@/firebaseConfig"
 import { useActionSheet } from "@/contexts/ActionSheetContext"
+import { deletePost, listenToUserPosts, togglePostLike } from "@/db/posts"
 
 
 const { height, width } = Dimensions.get("window")
@@ -17,17 +16,10 @@ export default function MyPosts() {
 
 
     useEffect(() => {
-        const postRef = collection(db, "posts")
+        const uid = auth.currentUser?.uid
+        if (!uid) return
 
-        const unsubscribe = onSnapshot(postRef, (snapshot) => {
-            const postsData: any[] = snapshot.docs.map(doc => ({
-                id: doc.id,
-                ...doc.data()
-            }))
-
-            const userPosts = postsData.filter(doc => {
-                return doc.uid === auth.currentUser?.uid
-            })
+        const unsubscribe = listenToUserPosts(uid, (userPosts) => {
             setPosts(userPosts)
             console.log(userPosts)
         })
@@ -37,33 +29,20 @@ export default function MyPosts() {
     }, [])
 
     const addToFavorite = async (postId: any, likes: any[]) => {
-        const posRef = doc(db, "posts", postId)
         const uid = auth.currentUser?.uid
         if (!uid) return
 
         try {
-            if (likes.includes(uid)) {
-                await updateDoc(posRef, {
-                    likes: arrayRemove(uid)
-                })
-            } else {
-                await updateDoc(posRef, {
-                    likes: arrayUnion(uid)
-                })
-            }
-
+            await togglePostLike(postId, uid, likes)
         } catch (e) {
             console.log(e)
         }
     }
 
-    const deletePost = async (postId: string) => {
-        const postsCollection = collection(db, Collections.posts)
-        const postRef = doc(postsCollection, postId)
-
+    const deletePostFunc = async (postId: string) => {
         try {
             setDeletePostBtnSpinner(true)
-            await deleteDoc(postRef)
+            await deletePost(postId)
         } catch (e) {
             console.log(e)
         } finally {
@@ -79,7 +58,7 @@ export default function MyPosts() {
                     <View style={styles.postsContainerStyle}>
                         {posts?.map(post => {
                             let likes = post.likes || []
-                            return <PostCard btnSpinner={deletePostBtnSpinner} onDeletePostPress={() => { deletePost(post.id) }} press={() => { addToFavorite(post.id, likes) }} key={post.id} content={post.content} likesCount={likes.length}></PostCard>
+                            return <PostCard btnSpinner={deletePostBtnSpinner} onDeletePostPress={() => { deletePostFunc(post.id) }} press={() => { addToFavorite(post.id, likes) }} key={post.id} content={post.content} likesCount={likes.length}></PostCard>
                         })}
                     </View>
                 </View>

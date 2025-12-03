@@ -1,7 +1,6 @@
 import { getDownloadURL, getStorage, ref, uploadBytes } from "firebase/storage"
 import { uriToBlob } from "./image_functions";
-import { collection, doc, updateDoc } from "firebase/firestore";
-import { db } from "@/firebaseConfig";
+import { updateUser } from "@/db/users";
 
 
 export async function uploadProfileImageToCloud(userId: any, uri: any) {
@@ -22,12 +21,7 @@ export async function uploadProfileImageToCloud(userId: any, uri: any) {
 
 
 export async function saveUrlToFirestore(userId: any, url: any) {
-
-    const users = collection(db, "users");
-    const userRef = doc(users, userId);
-
-    await updateDoc(userRef, {
+    await updateUser(userId, {
         profilePictureUrl: url
-    })
-
+    });
 }

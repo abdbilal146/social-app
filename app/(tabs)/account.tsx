@@ -18,16 +18,17 @@ import React, { useEffect, useState } from "react";
 
 import { Dimensions, StyleSheet, Text, View } from "react-native";
 import { createUserWithEmailAndPassword, deleteUser, onAuthStateChanged, signInWithEmailAndPassword, signOut, updateEmail, updatePassword, User } from "firebase/auth"
-import { auth, db } from "../../firebaseConfig"
-import { collection, deleteDoc, doc, DocumentData, onSnapshot, serverTimestamp, setDoc, updateDoc } from "firebase/firestore";
-
-
-const { width, height } = Dimensions.get("window");
+import { auth } from "../../firebaseConfig"
+import { DocumentData } from "firebase/firestore";
 import { Colors } from "@/constants/Colors";
-import { pickImage, uriToBlob } from "@/utils/image_functions";
+import { pickImage } from "@/utils/image_functions";
 import { saveUrlToFirestore, uploadProfileImageToCloud } from "@/utils/cloud_storage";
 import { saveToken } from "@/notifications";
 import { Collections } from "@/constants/Collections";
+import { createUser, deleteUserDocument, listenToUser, updateUser } from "@/db/users";
+
+
+const { width, height } = Dimensions.get("window");
 
 export default function Account() {
   const { openActionSheet, setBodyContent, closeActionSheet } = useActionSheet();
@@ -35,8 +36,6 @@ export default function Account() {
   const [user, setUser] = useState<User | null>(null);
   const [userData, setUserData] = useState<DocumentData>()
   const [accountEmail, setAccountEmail] = useState<string | null>("")
-
-
 
 
   useEffect(() => {
@@ -56,19 +55,9 @@ export default function Account() {
   useEffect(() => {
     if (!user) return;
 
-    const usersColl = collection(db, "users")
-
-    const userRef = doc(usersColl, user.uid)
-
-
-    const unsub = onSnapshot(userRef, (snapshot) => {
-      if (snapshot.exists()) {
-        setUserData(snapshot.data())
-
-
-        console.log(snapshot.data())
-      }
-
+    const unsub = listenToUser(user.uid, (data) => {
+      setUserData(data)
+      console.log(data)
     })
 
     return () => unsub()
@@ -86,8 +75,7 @@ export default function Account() {
 
   const deleteAccount = async () => {
     try {
-      const userRef = doc(db, "users", auth.currentUser!.uid)
-      await deleteDoc(userRef)
+      await deleteUserDocument(auth.currentUser!.uid)
       await deleteUser(auth.currentUser!)
     } catch (e) {
       console.log(e)
@@ -252,18 +240,15 @@ function PersonaInfoBody() {
 
   const updateUserInfo = async () => {
     setSpinnerIsVisible(true)
-    const usersCollection = collection(db, "users")
     const currentUserId = auth.currentUser?.uid
-    const userRef = doc(usersCollection, currentUserId)
+    if (!currentUserId) return
 
-    await updateDoc(userRef, {
+    await updateUser(currentUserId, {
       name: name,
       familyName: familyName
     }).finally(() => {
       closeActionSheet()
     })
-
-
   }
 
   return (
@@ -474,13 +459,9 @@ function RegisterScreen({ setRegisterVisibility }: { setRegisterVisibility: () =
 
         await saveToken(Collections.users, user.uid)
 
-        await setDoc(doc(db, Collections.users, user.uid), {
-          uid: user.uid,
-          email: user.email,
-          createdAt: serverTimestamp(),
-          lastLogin: serverTimestamp()
-        }).then(() => console.log("document is created")).
-          catch(e => console.log(e))
+        await createUser(user.uid, user.email)
+          .then(() => console.log("document is created"))
+          .catch(e => console.log(e))
       }
     } catch (e) {
       console.log(e)
@@ -566,7 +547,7 @@ function ProfilePhotoMenu() {
 
 const styles = StyleSheet.create({
   accountViewStyle: {
-    backgroundColor: Colors.white, // Keeping the requested background color#112D4E
+    backgroundColor: Colors.white,
     flex: 1,
     justifyContent: "flex-start",
     alignItems: "center",
@@ -678,7 +659,7 @@ const styles = StyleSheet.create({
     width: "100%",
     height: height,
     gap: 20,
-    backgroundColor: Colors.darkBlue, // Matched to account view
+    backgroundColor: Colors.darkBlue,
   },
   loginScreenTitleContainer: {
     display: "flex",

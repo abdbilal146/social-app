@@ -2,5 +2,11 @@
 
 export const Collections = {
     users: 'users',
-    posts: 'posts'
+    posts: 'posts',
+    chats: 'chats'
+}
+
+
+export const SubCollection = {
+    messages: 'messages'
 }

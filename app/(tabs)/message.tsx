@@ -3,17 +3,19 @@ import { Divider } from "@/components/ui/divider";
 import { FormControl } from "@/components/ui/form-control";
 import { ArrowRightIcon, SearchIcon, TrashIcon } from "@/components/ui/icon";
 import { Input, InputField } from "@/components/ui/input";
-import { auth, db } from "@/firebaseConfig";
-import { listenMessages, sendMessage } from "@/utils/message";
-import { collection, doc, DocumentData, getDoc, onSnapshot } from "firebase/firestore";
+import { auth } from "@/firebaseConfig";
+import { DocumentData } from "firebase/firestore";
 import { useEffect, useState } from "react";
-import { StyleSheet, View, KeyboardAvoidingView, Platform, FlatList, Text, Dimensions, Pressable, BackHandler, ScrollView } from "react-native";
-import Animated, { FadeIn, FadeOut, SlideInRight, SlideOutRight, FadeInDown, FadeInUp, Layout } from "react-native-reanimated";
+import { StyleSheet, View, KeyboardAvoidingView, Platform, FlatList, Text, Dimensions, Pressable, BackHandler } from "react-native";
+import Animated, { FadeIn, FadeOut, SlideInRight, SlideOutRight, FadeInDown, FadeInUp } from "react-native-reanimated";
 
 const { height, width } = Dimensions.get("window")
 import { Colors } from "@/constants/Colors";
 import { HStack } from "@/components/ui/hstack";
 import { Avatar, AvatarImage } from "@/components/ui/avatar";
+import { getAllUsers, listenToUser } from "@/db/users";
+import { listenToMessages, listenToUserChats, sendMessage } from "@/db/chats";
+import { useRouter } from "expo-router";
 
 export default function Message() {
     const [getUsers, setUsers] = useState<any[]>()
@@ -25,17 +27,10 @@ export default function Message() {
     const [messages, setMessages] = useState<any[]>()
 
     useEffect(() => {
-        const userRef = collection(db, "users")
-        const users = onSnapshot(userRef, (snapshot) => {
-            const usersData: any[] = snapshot.docs.map(doc => {
-                return {
-                    id: doc.id,
-                    ...doc.data()
-                }
-            })
+        const unsubscribe = getAllUsers((usersData) => {
             setUsers(usersData)
         })
-        return () => users()
+        return () => unsubscribe()
     }, [])
 
     useEffect(() => {
@@ -60,17 +55,11 @@ export default function Message() {
     }, [dialogScreenVisibility])
 
     useEffect(() => {
-        const messageRef = collection(db, "chats")
-        const unsubscribe = onSnapshot(messageRef, (snapshot) => {
-            const messagesData: any[] = snapshot.docs
-                .filter(doc => doc.id.includes(auth.currentUser?.uid!))
-                .map(doc => ({
-                    id: doc.id,
-                    ...doc.data()
-                }))
+        const uid = auth.currentUser?.uid
+        if (!uid) return
 
+        const unsubscribe = listenToUserChats(uid, (messagesData) => {
             setMessages(messagesData)
-
             console.log("messages data:", messagesData)
         })
         return () => unsubscribe()
@@ -171,26 +160,21 @@ function DialogScreen({ chatId, receiverId }: { chatId: string, receiverId: stri
     const [messages, setMessages] = useState<any[]>([])
     /* const [receiverPhotoProfile, setReceiverPhotoProfile] = useState<string>() */
     const [receiverData, setReceiverData] = useState<DocumentData>()
+    const router = useRouter()
 
-    console.log("reciveridis", receiverId)
 
 
 
     useEffect(() => {
-        const usersColle = collection(db, 'users')
-        const receiverRef = doc(usersColle, receiverId)
-
-        const unsub = onSnapshot(receiverRef, (snapshot) => {
-            if (snapshot.exists()) {
-                setReceiverData(snapshot.data())
-            }
+        const unsub = listenToUser(receiverId, (data) => {
+            setReceiverData(data)
         })
 
         return () => unsub()
     }, [])
 
     useEffect(() => {
-        const unsubscribe = listenMessages(chatId, (msgs: any) => {
+        const unsubscribe = listenToMessages(chatId, (msgs: any) => {
             setMessages(msgs)
         })
         return () => unsubscribe()
@@ -209,18 +193,31 @@ function DialogScreen({ chatId, receiverId }: { chatId: string, receiverId: stri
         }
     }
 
+    const navigateToASpecificRoute = (route: string, userId: string, profilePhotoUrl: string, familyName: string, name: string) => {
+        router.push({
+            pathname: route, params: {
+                userId: userId,
+                profilePhotoUrl: profilePhotoUrl,
+                familyName: familyName,
+                name: name
+            }
+        })
+    }
+
     return (
         <Animated.View entering={SlideInRight} exiting={SlideOutRight} style={{ flex: 1 }}>
             <View style={styles.diaolgScreenHeader}>
                 <HStack style={styles.dialogScreenHeaderContentContainer}>
                     <View style={styles.headerUserInfo}>
-                        <Avatar style={styles.headerAvatar}>
-                            <AvatarImage
-                                source={{
-                                    uri: receiverData?.profilePictureUrl || 'https://upload.wikimedia.org/wikipedia/commons/8/89/Portrait_Placeholder.png'
-                                }}
-                            />
-                        </Avatar>
+                        <Pressable onPress={() => { navigateToASpecificRoute("/userprofile", receiverId, receiverData?.profilePictureUrl, receiverData?.familyName, receiverData?.name) }}>
+                            <Avatar style={styles.headerAvatar}>
+                                <AvatarImage
+                                    source={{
+                                        uri: receiverData?.profilePictureUrl || 'https://upload.wikimedia.org/wikipedia/commons/8/89/Portrait_Placeholder.png'
+                                    }}
+                                />
+                            </Avatar>
+                        </Pressable>
                         <View style={styles.headerTextContainer}>
                             <Text style={styles.headerName}>
                                 {receiverData ? `${receiverData.name || ""} ${receiverData.familyName || ""}`.trim() || receiverData.email : "Chargement..."}
@@ -287,11 +284,8 @@ const MessageItem = ({ item, index, onOpenChat }: { item: any, index: number, on
         });
 
         if (filteredChatDataSplitted.length > 0) {
-            const usersCollection = collection(db, 'users');
-            const userRef = doc(usersCollection, filteredChatDataSplitted[0]);
-
-            const unsubscribe = onSnapshot(userRef, (snapshot) => {
-                setReceiverData(snapshot.data() || null);
+            const unsubscribe = listenToUser(filteredChatDataSplitted[0], (data) => {
+                setReceiverData(data || null);
             });
 
             return () => unsubscribe();

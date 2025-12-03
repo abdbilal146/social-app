@@ -1,7 +1,6 @@
 import * as Notifications from "expo-notifications"
 import * as Device from "expo-device"
-import { collection, doc, setDoc, updateDoc } from "firebase/firestore";
-import { db } from "./firebaseConfig";
+import { saveUserToken } from "./db/notifications";
 
 
 export async function registerForPushNotificationsAsync() {
@@ -26,13 +25,5 @@ export async function registerForPushNotificationsAsync() {
 
 
 export async function saveToken(collectionName: string, userId: string) {
-    const token = await registerForPushNotificationsAsync()
-    if (!token) return
-
-    const usersCollection = collection(db, collectionName)
-    const userRef = doc(usersCollection, userId)
-
-    await updateDoc(userRef, {
-        fcmToken: token
-    })
+    await saveUserToken(collectionName, userId);
 }

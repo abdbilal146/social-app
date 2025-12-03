@@ -9,8 +9,8 @@ import { Textarea, TextareaInput } from "@/components/ui/textarea";
 import { VStack } from "@/components/ui/vstack";
 import { useActionSheet } from "@/contexts/ActionSheetContext";
 import { useModal } from "@/contexts/ModalContext";
-import { auth, db } from "@/firebaseConfig";
-import { arrayRemove, arrayUnion, collection, doc, onSnapshot, serverTimestamp, setDoc, updateDoc } from "firebase/firestore";
+import { auth } from "@/firebaseConfig";
+import { createPost, listenToAllPosts, togglePostLike } from "@/db/posts";
 import { Fragment, useEffect, useState } from "react";
 import { Dimensions, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { Colors } from "@/constants/Colors";
@@ -31,13 +31,7 @@ export default function Index() {
     }
 
     useEffect(() => {
-        const postRef = collection(db, "posts")
-
-        const unsubscribe = onSnapshot(postRef, (snapshot) => {
-            const postsData: any[] = snapshot.docs.map(doc => ({
-                id: doc.id,
-                ...doc.data()
-            }))
+        const unsubscribe = listenToAllPosts((postsData) => {
             setPosts(postsData)
             console.log(postsData)
         })
@@ -47,21 +41,11 @@ export default function Index() {
     }, [])
 
     const addToFavorite = async (postId: any, likes: any[]) => {
-        const posRef = doc(db, "posts", postId)
         const uid = auth.currentUser?.uid
         if (!uid) return
 
         try {
-            if (likes.includes(uid)) {
-                await updateDoc(posRef, {
-                    likes: arrayRemove(uid)
-                })
-            } else {
-                await updateDoc(posRef, {
-                    likes: arrayUnion(uid)
-                })
-            }
-
+            await togglePostLike(postId, uid, likes)
         } catch (e) {
             console.log(e)
         }
@@ -103,15 +87,7 @@ function ModalBody() {
         if (!textareaValue || textareaValue.trim().length === 0) return
 
         try {
-            const postRef = collection(db, "posts")
-            const newPostRef = doc(postRef)
-
-            await setDoc(newPostRef, {
-                uid: auth.currentUser?.uid!,
-                likes: [],
-                createdAt: serverTimestamp(),
-                content: textareaValue
-            })
+            await createPost(auth.currentUser?.uid!, textareaValue)
         } catch (e) {
             console.log(e)
         } finally {
