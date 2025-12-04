@@ -2,8 +2,8 @@ import { ExpoConfig, ConfigContext } from 'expo/config';
 
 export default ({ config }: ConfigContext): ExpoConfig => ({
     ...config,
-    name: "Expo",
-    slug: "Expo",
+    name: "StudentSocialApp",
+    slug: "StudentSocialApp",
     version: "1.0.0",
     orientation: "portrait",
     icon: "./assets/icon.png",
@@ -29,7 +29,8 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
         "edgeToEdgeEnabled": true,
         "predictiveBackGestureEnabled": false,
         "package": "com.student.app",
-        "googleServicesFile": process.env.GOOGLE_SERVICES_JSON || "./google-services.json"
+        "googleServicesFile": process.env.GOOGLE_SERVICES_JSON || "./google-services.json",
+
     },
     web: {
         "favicon": "./assets/favicon.png"
@@ -38,7 +39,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
         "expo-router",
         "expo-font",
         "expo-notifications",
-        "react-native-google-mobile-ads"
+        "react-native-google-mobile-ads",
     ],
     notification: {
         icon: "./assets/icon.png",
