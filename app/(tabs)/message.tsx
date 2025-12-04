@@ -18,10 +18,11 @@ import { deleteMessage, listenToMessages, listenToUserChats, sendMessage } from 
 import { useRouter } from "expo-router";
 import { useActionSheet } from "@/contexts/ActionSheetContext";
 import { Spinner } from "@/components/ui/spinner";
+import { Ionicons } from "@expo/vector-icons";
 
 export default function Message() {
     const [getUsers, setUsers] = useState<any[]>()
-    const [searchKeyWord, setSearchkeyWord] = useState<string>()
+    const [searchKeyWord, setSearchkeyWord] = useState<string>("")
     const [filtredSearchList, setFiltredSearchList] = useState<any[]>()
     const [dialogScreenVisibility, setDialogScreenVisibility] = useState<boolean>(false)
     const [chatId, setChatid] = useState<string>()
@@ -75,6 +76,7 @@ export default function Message() {
     }
 
     const deleteSearch = () => {
+        setSearchkeyWord("")
         setFiltredSearchList([])
     }
 
@@ -98,10 +100,17 @@ export default function Message() {
     }
 
     const renderSearchItem = ({ item, index }: { item: any, index: number }) => (
-        <Animated.View entering={FadeInDown.delay(index * 100).springify()}>
+        <Animated.View entering={FadeInDown.delay(index * 80).springify()}>
             <Pressable onPress={() => showDialogScreen(item)}>
-                <View style={styles.renderSearchItemContainer}>
-                    <Text style={{ color: Colors.text, fontWeight: 600 }}>{item.email}</Text>
+                <View style={styles.searchResultItem}>
+                    <View style={styles.searchResultAvatar}>
+                        <Ionicons name="person" size={18} color={Colors.primary} />
+                    </View>
+                    <View style={styles.searchResultInfo}>
+                        <Text style={styles.searchResultEmail}>{item.email}</Text>
+                        <Text style={styles.searchResultHint}>Appuyez pour démarrer une conversation</Text>
+                    </View>
+                    <Ionicons name="chevron-forward" size={20} color={Colors.text} style={{ opacity: 0.4 }} />
                 </View>
             </Pressable>
         </Animated.View>
@@ -114,44 +123,90 @@ export default function Message() {
     return (
         <View style={styles.container}>
             {
-                dialogScreenVisibility === false ? <Animated.View entering={FadeIn} style={styles.searchContainer}>
-                    <FormControl>
-                        <Input style={styles.searchFieldStyle}>
-                            <InputField placeholder="rechercher un ami" style={styles.inputField} onChangeText={setSearchkeyWord} value={searchKeyWord}></InputField>
-                        </Input>
-                    </FormControl>
-                    <View style={styles.searchBtnContainerStyle}>
-                        <Button style={styles.searchBtn} onPress={onSearch}>
-                            <ButtonIcon fill={Colors.primary} color={Colors.white} as={SearchIcon}>
-                            </ButtonIcon>
-                        </Button>
-                        <Button onPress={deleteSearch} style={styles.searchBtn}>
-                            <ButtonIcon fill={Colors.primary} color={Colors.white} as={TrashIcon}></ButtonIcon>
-                        </Button>
-                    </View>
+                dialogScreenVisibility === false ? (
+                    <Animated.View entering={FadeIn} style={styles.mainContainer}>
+                        {/* Modern Header */}
+                        <View style={styles.header}>
+                            <Text style={styles.headerTitle}>Messages</Text>
+                            <Text style={styles.headerSubtitle}>Discutez avec vos amis</Text>
+                        </View>
 
-                    {filtredSearchList && (
-                        <FlatList
-                            data={filtredSearchList}
-                            keyExtractor={(item) => item.id}
-                            renderItem={renderSearchItem}
-                            style={{ maxHeight: 200 }}
-                        />
-                    )}
+                        {/* Modern Search Section */}
+                        <View style={styles.searchSection}>
+                            <View style={styles.searchInputWrapper}>
+                                <Ionicons name="search" size={20} color={Colors.text} style={styles.searchIcon} />
+                                <Input style={styles.modernSearchInput}>
+                                    <InputField
+                                        placeholder="Rechercher un ami..."
+                                        placeholderTextColor="rgba(86, 86, 86, 0.5)"
+                                        style={styles.modernInputField}
+                                        onChangeText={setSearchkeyWord}
+                                        value={searchKeyWord}
+                                        onSubmitEditing={onSearch}
+                                        returnKeyType="search"
+                                    />
+                                </Input>
+                                {searchKeyWord.length > 0 && (
+                                    <Pressable onPress={deleteSearch} style={styles.clearButton}>
+                                        <Ionicons name="close-circle" size={20} color={Colors.text} />
+                                    </Pressable>
+                                )}
+                            </View>
+                            <Pressable style={styles.searchButton} onPress={onSearch}>
+                                <Ionicons name="arrow-forward" size={20} color={Colors.white} />
+                            </Pressable>
+                        </View>
 
-                    <View style={styles.dividerContainer}>
-                        <Divider style={styles.dividerStyle}></Divider>
-                        <Text style={styles.dividerTextStyle}>Messages</Text>
-                        <Divider style={styles.dividerStyle}></Divider>
-                    </View>
+                        {/* Search Results */}
+                        {filtredSearchList && filtredSearchList.length > 0 && (
+                            <Animated.View entering={FadeInDown.springify()} style={styles.searchResultsContainer}>
+                                <Text style={styles.sectionLabel}>Résultats de recherche</Text>
+                                <FlatList
+                                    data={filtredSearchList}
+                                    keyExtractor={(item) => item.id}
+                                    renderItem={renderSearchItem}
+                                    style={{ maxHeight: 200 }}
+                                    showsVerticalScrollIndicator={false}
+                                />
+                            </Animated.View>
+                        )}
 
-                    <FlatList
-                        data={messages}
-                        keyExtractor={(item) => item.id}
-                        renderItem={renderMessages}
-                        style={{}}
-                    />
-                </Animated.View> : <DialogScreen chatId={chatId!} receiverId={receiverId!}></DialogScreen>
+                        {/* Messages Section */}
+                        <View style={styles.messagesSection}>
+                            <View style={styles.messagesSectionHeader}>
+                                <View style={styles.sectionLabelContainer}>
+                                    <Ionicons name="chatbubbles" size={20} color={Colors.primary} />
+                                    <Text style={styles.sectionTitle}>Conversations</Text>
+                                </View>
+                                {messages && messages.length > 0 && (
+                                    <View style={styles.messageBadge}>
+                                        <Text style={styles.messageBadgeText}>{messages.length}</Text>
+                                    </View>
+                                )}
+                            </View>
+
+                            {messages && messages.length > 0 ? (
+                                <FlatList
+                                    data={messages}
+                                    keyExtractor={(item) => item.id}
+                                    renderItem={renderMessages}
+                                    showsVerticalScrollIndicator={false}
+                                    contentContainerStyle={styles.messagesList}
+                                />
+                            ) : (
+                                <View style={styles.emptyState}>
+                                    <View style={styles.emptyIcon}>
+                                        <Ionicons name="chatbubble-ellipses-outline" size={48} color={Colors.primary} />
+                                    </View>
+                                    <Text style={styles.emptyTitle}>Aucune conversation</Text>
+                                    <Text style={styles.emptySubtitle}>Recherchez un ami pour commencer à discuter</Text>
+                                </View>
+                            )}
+                        </View>
+                    </Animated.View>
+                ) : (
+                    <DialogScreen chatId={chatId!} receiverId={receiverId!}></DialogScreen>
+                )
             }
         </View >
     )
@@ -165,7 +220,6 @@ function DialogScreen({ chatId, receiverId }: { chatId: string, receiverId: stri
     const router = useRouter()
     const { openActionSheet, setBodyContent, closeActionSheet } = useActionSheet()
     const [btnSpinner, setBtnSpinner] = useState<boolean>(false)
-
 
 
 
@@ -369,24 +423,30 @@ const MessageItem = ({ item, index, onOpenChat }: { item: any, index: number, on
     }, [item.id]);
 
     return (
-        <Animated.View entering={FadeInDown.delay(index * 100).springify()}>
-            <Pressable onPress={() => onOpenChat(item)}>
-                <View style={styles.renderSearchItemContainer}>
-                    <HStack style={{ alignItems: 'center', gap: 10 }}>
-                        <Avatar>
+        <Animated.View entering={FadeInDown.delay(index * 80).springify()}>
+            <Pressable onPress={() => onOpenChat(item)} style={styles.messageItemPressable}>
+                <View style={styles.messageItemContainer}>
+                    <View style={styles.messageItemAvatarContainer}>
+                        <Avatar style={styles.messageItemAvatar}>
                             <AvatarImage
                                 source={{
                                     uri: receiverData?.profilePictureUrl || 'https://upload.wikimedia.org/wikipedia/commons/8/89/Portrait_Placeholder.png'
                                 }}
                             />
                         </Avatar>
-                        <View>
-                            <Text style={{ color: Colors.text, fontWeight: '600', fontSize: 16 }}>
-                                {receiverData ? `${receiverData.name || ""} ${receiverData.familyName || ""}`.trim() || receiverData.email : "Chargement..."}
-                            </Text>
-                            <Text style={{ color: Colors.text, fontSize: 14 }}>{item.lastMessage}</Text>
-                        </View>
-                    </HStack>
+                        <View style={styles.onlineIndicator} />
+                    </View>
+                    <View style={styles.messageItemContent}>
+                        <Text style={styles.messageItemName}>
+                            {receiverData ? `${receiverData.name || ""} ${receiverData.familyName || ""}`.trim() || receiverData.email : "Chargement..."}
+                        </Text>
+                        <Text style={styles.messageItemLastMessage} numberOfLines={1}>
+                            {item.lastMessage}
+                        </Text>
+                    </View>
+                    <View style={styles.messageItemRight}>
+                        <Ionicons name="chevron-forward" size={18} color={Colors.text} style={{ opacity: 0.4 }} />
+                    </View>
                 </View>
             </Pressable>
         </Animated.View>
@@ -396,33 +456,261 @@ const MessageItem = ({ item, index, onOpenChat }: { item: any, index: number, on
 const styles = StyleSheet.create({
     container: {
         flex: 1,
+        backgroundColor: Colors.offWhite,
+    },
+    mainContainer: {
+        flex: 1,
+    },
+    // Modern Header
+    header: {
+        paddingTop: height * 0.08,
+        paddingBottom: 16,
+        paddingHorizontal: 20,
         backgroundColor: Colors.white,
-        justifyContent: "space-between",
+        borderBottomLeftRadius: 24,
+        borderBottomRightRadius: 24,
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.05,
+        shadowRadius: 8,
+        elevation: 3,
     },
-    searchContainer: {
-        marginTop: height * 0.1,
-        margin: 10,
-        display: "flex",
-        gap: 12
+    headerTitle: {
+        fontSize: 32,
+        fontWeight: "800",
+        color: Colors.darkBlue,
+        letterSpacing: -0.5,
     },
-    searchFieldStyle: {
-        height: 40,
-        borderRadius: 10,
-        borderColor: Colors.primary,
-
+    headerSubtitle: {
+        fontSize: 14,
+        color: Colors.text,
+        opacity: 0.6,
+        marginTop: 4,
     },
-    searchBtnContainerStyle: {
-        display: "flex",
+    // Modern Search
+    searchSection: {
         flexDirection: "row",
-        width: "100%",
-        gap: "5%",
         alignItems: "center",
-        justifyContent: "center"
+        paddingHorizontal: 16,
+        paddingVertical: 16,
+        gap: 12,
     },
-    searchBtn: {
-        width: "45%",
-        backgroundColor: Colors.primary
+    searchInputWrapper: {
+        flex: 1,
+        flexDirection: "row",
+        alignItems: "center",
+        backgroundColor: Colors.white,
+        borderRadius: 16,
+        paddingHorizontal: 14,
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.03,
+        shadowRadius: 4,
+        elevation: 2,
     },
+    searchIcon: {
+        opacity: 0.5,
+        marginRight: 10,
+    },
+    modernSearchInput: {
+        flex: 1,
+        borderWidth: 0,
+        backgroundColor: "transparent",
+        height: 48,
+    },
+    modernInputField: {
+        color: Colors.text,
+        fontSize: 15,
+    },
+    clearButton: {
+        padding: 4,
+        opacity: 0.5,
+    },
+    searchButton: {
+        width: 48,
+        height: 48,
+        borderRadius: 16,
+        backgroundColor: Colors.primary,
+        alignItems: "center",
+        justifyContent: "center",
+        shadowColor: Colors.primary,
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.3,
+        shadowRadius: 8,
+        elevation: 4,
+    },
+    // Search Results
+    searchResultsContainer: {
+        marginHorizontal: 16,
+        marginBottom: 16,
+        backgroundColor: Colors.white,
+        borderRadius: 16,
+        padding: 12,
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.03,
+        shadowRadius: 4,
+        elevation: 2,
+    },
+    sectionLabel: {
+        fontSize: 12,
+        fontWeight: "600",
+        color: Colors.text,
+        opacity: 0.5,
+        textTransform: "uppercase",
+        letterSpacing: 0.5,
+        marginBottom: 8,
+        paddingHorizontal: 4,
+    },
+    searchResultItem: {
+        flexDirection: "row",
+        alignItems: "center",
+        paddingVertical: 12,
+        paddingHorizontal: 8,
+        borderBottomWidth: 1,
+        borderBottomColor: Colors.offWhite,
+    },
+    searchResultAvatar: {
+        width: 40,
+        height: 40,
+        borderRadius: 12,
+        backgroundColor: `${Colors.primary}15`,
+        alignItems: "center",
+        justifyContent: "center",
+    },
+    searchResultInfo: {
+        flex: 1,
+        marginLeft: 12,
+    },
+    searchResultEmail: {
+        fontSize: 15,
+        fontWeight: "600",
+        color: Colors.text,
+    },
+    searchResultHint: {
+        fontSize: 12,
+        color: Colors.text,
+        opacity: 0.5,
+        marginTop: 2,
+    },
+    // Messages Section
+    messagesSection: {
+        flex: 1,
+        paddingHorizontal: 16,
+    },
+    messagesSectionHeader: {
+        flexDirection: "row",
+        alignItems: "center",
+        justifyContent: "space-between",
+        marginBottom: 12,
+    },
+    sectionLabelContainer: {
+        flexDirection: "row",
+        alignItems: "center",
+        gap: 8,
+    },
+    sectionTitle: {
+        fontSize: 18,
+        fontWeight: "700",
+        color: Colors.darkBlue,
+    },
+    messageBadge: {
+        backgroundColor: Colors.primary,
+        paddingHorizontal: 10,
+        paddingVertical: 4,
+        borderRadius: 12,
+    },
+    messageBadgeText: {
+        fontSize: 12,
+        fontWeight: "700",
+        color: Colors.white,
+    },
+    messagesList: {
+        paddingBottom: 20,
+    },
+    // Empty State
+    emptyState: {
+        flex: 1,
+        alignItems: "center",
+        justifyContent: "center",
+        paddingBottom: 100,
+    },
+    emptyIcon: {
+        width: 100,
+        height: 100,
+        borderRadius: 50,
+        backgroundColor: `${Colors.primary}10`,
+        alignItems: "center",
+        justifyContent: "center",
+        marginBottom: 20,
+    },
+    emptyTitle: {
+        fontSize: 20,
+        fontWeight: "700",
+        color: Colors.darkBlue,
+        marginBottom: 8,
+    },
+    emptySubtitle: {
+        fontSize: 14,
+        color: Colors.text,
+        opacity: 0.6,
+        textAlign: "center",
+        paddingHorizontal: 40,
+    },
+    // Message Item
+    messageItemPressable: {
+        marginBottom: 8,
+    },
+    messageItemContainer: {
+        flexDirection: "row",
+        alignItems: "center",
+        backgroundColor: Colors.white,
+        borderRadius: 16,
+        padding: 12,
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.03,
+        shadowRadius: 4,
+        elevation: 2,
+    },
+    messageItemAvatarContainer: {
+        position: "relative",
+    },
+    messageItemAvatar: {
+        width: 52,
+        height: 52,
+        borderRadius: 16,
+    },
+    onlineIndicator: {
+        position: "absolute",
+        bottom: 2,
+        right: 2,
+        width: 12,
+        height: 12,
+        borderRadius: 6,
+        backgroundColor: "#4CAF50",
+        borderWidth: 2,
+        borderColor: Colors.white,
+    },
+    messageItemContent: {
+        flex: 1,
+        marginLeft: 12,
+    },
+    messageItemName: {
+        fontSize: 16,
+        fontWeight: "600",
+        color: Colors.darkBlue,
+    },
+    messageItemLastMessage: {
+        fontSize: 14,
+        color: Colors.text,
+        opacity: 0.6,
+        marginTop: 2,
+    },
+    messageItemRight: {
+        paddingLeft: 8,
+    },
+    // Dialog Screen Header
     diaolgScreenHeader: {
         marginTop: height * 0.1,
         backgroundColor: Colors.primary,
@@ -523,7 +811,7 @@ const styles = StyleSheet.create({
     },
     dividerTextStyle: {
         color: Colors.black,
-        fontWeight: 600
+        fontWeight: "600"
     },
     sendBtn: {
 

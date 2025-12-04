@@ -4,8 +4,9 @@ import { SearchIcon, TrashIcon } from "@/components/ui/icon";
 import { Input, InputField } from "@/components/ui/input";
 import { useState } from "react";
 import { StyleSheet, View, FlatList, Text, Dimensions, Pressable } from "react-native";
-import Animated, { FadeInDown } from "react-native-reanimated";
+import Animated, { FadeInDown, FadeInUp } from "react-native-reanimated";
 import { Colors } from "@/constants/Colors";
+import { BannerAd, BannerAdSize, TestIds } from "react-native-google-mobile-ads";
 
 const { height } = Dimensions.get("window");
 
@@ -53,6 +54,24 @@ export default function Search() {
                         <ButtonIcon fill={Colors.primary} color={Colors.white} as={TrashIcon} />
                     </Button>
                 </View>
+
+                {/*Banner */}
+                <Animated.View
+                    entering={FadeInUp.delay(300).springify()}
+                    style={styles.bannerContainer}
+                >
+                    <View style={styles.bannerWrapper}>
+                        <Text style={styles.bannerLabel}>📢 Sponsorisé</Text>
+                        <BannerAd
+                            unitId={TestIds.BANNER}
+                            size={BannerAdSize.BANNER}
+                            requestOptions={{
+                                requestNonPersonalizedAdsOnly: true,
+                            }}
+                            onAdFailedToLoad={(error) => console.log("Ad failed to load:", error)}
+                        />
+                    </View>
+                </Animated.View>
 
                 {filtredSearchList && (
                     <FlatList
@@ -109,5 +128,35 @@ const styles = StyleSheet.create({
         alignItems: "flex-start",
         justifyContent: "center",
         borderBottomColor: '#ccc',
+    },
+    // Banner Ad Styles
+    bannerContainer: {
+        marginTop: 16,
+        marginBottom: 8,
+    },
+    bannerWrapper: {
+        backgroundColor: Colors.offWhite,
+        borderRadius: 16,
+        paddingVertical: 12,
+        paddingHorizontal: 16,
+        alignItems: "center",
+        borderWidth: 1,
+        borderColor: "rgba(63, 114, 175, 0.1)",
+        shadowColor: "#000",
+        shadowOffset: {
+            width: 0,
+            height: 1,
+        },
+        shadowOpacity: 0.03,
+        shadowRadius: 4,
+        elevation: 2,
+    },
+    bannerLabel: {
+        fontSize: 11,
+        fontWeight: "500",
+        color: Colors.text,
+        opacity: 0.6,
+        marginBottom: 8,
+        alignSelf: "flex-start",
     },
 });

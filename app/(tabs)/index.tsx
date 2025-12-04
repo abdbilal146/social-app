@@ -17,10 +17,14 @@ import { Spinner } from "@/components/ui/spinner";
 import Animated, { FadeInDown, Layout } from "react-native-reanimated";
 import { Ionicons } from "@expo/vector-icons";
 import AdMob from "@/components/ui/AdMob";
-/* import AdMob from "@/components/ui/AdMob"; */
-
 
 const { width, height } = Dimensions.get("window")
+
+// Ad insertion frequency: show ad after every X posts (like Twitter)
+const AD_FREQUENCY = 4;
+
+// Type for feed items
+type FeedItem = { type: 'post'; data: any } | { type: 'ad'; id: string };
 
 export default function Index() {
     const { openActionSheet, setBodyContent } = useActionSheet()
@@ -53,24 +57,59 @@ export default function Index() {
         }
     }
 
-    const renderPostItem = ({ item, index }: { item: any, index: number }) => {
-        let likes = item.likes || []
+    // Create feed with ads inserted between posts (like Twitter)
+    const getFeedWithAds = (): FeedItem[] => {
+        const feedItems: FeedItem[] = [];
+        let adCounter = 0;
+
+        posts.forEach((post, index) => {
+            feedItems.push({ type: 'post', data: post });
+
+            // Insert ad after every AD_FREQUENCY posts
+            if ((index + 1) % AD_FREQUENCY === 0 && index < posts.length - 1) {
+                feedItems.push({ type: 'ad', id: `ad-${adCounter}` });
+                adCounter++;
+            }
+        });
+
+        return feedItems;
+    };
+
+    const renderFeedItem = ({ item, index }: { item: FeedItem, index: number }) => {
+        // Render ad
+        if (item.type === 'ad') {
+            return (
+                <Animated.View
+                    entering={FadeInDown.delay(index * 80).springify()}
+                    style={styles.postWrapper}
+                >
+                    <AdMob />
+                </Animated.View>
+            );
+        }
+
+        // Render post
+        const post = item.data;
+        const likes = post.likes || [];
+
         return (
             <Animated.View
-                entering={FadeInDown.delay(index * 100).springify()}
+                entering={FadeInDown.delay(index * 80).springify()}
                 layout={Layout.springify()}
                 style={styles.postWrapper}
             >
                 <PostCard
                     btnSpinner={false}
                     onDeletePostPress={() => { console.log("Delete functionality restricted on feed") }}
-                    press={() => { addToFavorite(item.id, likes) }}
-                    content={item.content}
+                    press={() => { addToFavorite(post.id, likes) }}
+                    content={post.content}
                     likesCount={likes.length}
                 />
             </Animated.View>
-        )
-    }
+        );
+    };
+
+    const feedData = getFeedWithAds();
 
     return (
         <View style={styles.container}>
@@ -79,9 +118,9 @@ export default function Index() {
             </View>
 
             <FlatList
-                data={posts}
-                keyExtractor={(item) => item.id}
-                renderItem={renderPostItem}
+                data={feedData}
+                keyExtractor={(item) => item.type === 'ad' ? item.id : item.data.id}
+                renderItem={renderFeedItem}
                 contentContainerStyle={styles.listContent}
                 showsVerticalScrollIndicator={false}
                 ListEmptyComponent={
@@ -92,11 +131,6 @@ export default function Index() {
                     </View>
                 }
             />
-
-            <View>
-                <AdMob></AdMob>
-            </View>
-            {/*publicité*/}
 
             <Fab
                 style={styles.fabBtnStyle}

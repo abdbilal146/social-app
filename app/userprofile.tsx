@@ -129,25 +129,27 @@ export default function UserProfile() {
 
                 </Divider>
                 <HStack>
-                    <Button onPress={async () => {
+                    {
+                        auth?.currentUser?.uid !== params.userId && <Button onPress={async () => {
 
-                        if (currentUserInfo?.friends?.includes(userInfo.uid)) {
-                            await _removeFriendFromList();
-                        }
+                            if (currentUserInfo?.friends?.includes(userInfo.uid)) {
+                                await _removeFriendFromList();
+                            }
 
-                        else if (currentUserInfo?.friendInvitationsSent?.includes(userInfo.uid)) {
-                            await _removeFriendRequest();
-                            console.log("remove request");
-                        }
+                            else if (currentUserInfo?.friendInvitationsSent?.includes(userInfo.uid)) {
+                                await _removeFriendRequest();
+                                console.log("remove request");
+                            }
 
-                        if (!currentUserInfo?.friendInvitationsSent?.includes(userInfo.uid) && !currentUserInfo?.friends?.includes(userInfo.uid)) {
-                            await addFriendToList();
-                        }
-                    }} style={styles.useProfileBtn}>
-                        <ButtonText style={styles.useProfileBtnText}>
-                            {currentUserInfo?.friends?.includes(userInfo.uid) ? "Ami ( Cliquer pour retirer)" : currentUserInfo?.friendInvitationsSent?.includes(userInfo.uid) ? "Invitation envoyé" : "Ajouter comme ami"}
-                        </ButtonText>
-                    </Button>
+                            if (!currentUserInfo?.friendInvitationsSent?.includes(userInfo.uid) && !currentUserInfo?.friends?.includes(userInfo.uid)) {
+                                await addFriendToList();
+                            }
+                        }} style={styles.useProfileBtn}>
+                            <ButtonText style={styles.useProfileBtnText}>
+                                {currentUserInfo?.friends?.includes(userInfo.uid) ? "Ami ( Cliquer pour retirer)" : currentUserInfo?.friendInvitationsSent?.includes(userInfo.uid) ? "Invitation envoyé" : "Ajouter comme ami"}
+                            </ButtonText>
+                        </Button>
+                    }
                 </HStack>
 
                 <Divider style={styles.divider}>
