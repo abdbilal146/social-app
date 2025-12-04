@@ -68,9 +68,29 @@ export const addfriend = async (userId: string, currentUserId: string) => {
     const userRef = doc(db, Collections.users, userId);
     await updateDoc(userRef, {
         notifications: arrayUnion("friendRequest" + "_" + currentUserId),
-        friendRequests: arrayUnion(currentUserId)
+        friendRequests: arrayUnion(currentUserId),
+    })
+
+    const currentUserRef = doc(db, Collections.users, currentUserId);
+    await updateDoc(currentUserRef, {
+        friendInvitationsSent: arrayUnion(userId),
     })
 }
+
+export const removeFriendRequest = async (userId: string, currentUserId: string) => {
+
+    const userRef = doc(db, Collections.users, userId);
+    await updateDoc(userRef, {
+        notifications: arrayRemove("friendRequest" + "_" + currentUserId),
+        friendRequests: arrayRemove(currentUserId),
+    })
+
+    const currentUserRef = doc(db, Collections.users, currentUserId);
+    await updateDoc(currentUserRef, {
+        friendInvitationsSent: arrayRemove(userId),
+    })
+}
+
 
 export const removeFriendFromList = async (userId: string, currentUserId: string) => {
 

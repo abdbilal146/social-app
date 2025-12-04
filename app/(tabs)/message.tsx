@@ -229,7 +229,7 @@ function DialogScreen({ chatId, receiverId }: { chatId: string, receiverId: stri
             < View >
                 <View style={styles.messageDrawerBodyContainerStyle}>
                     <Pressable style={styles.messageDrawerPressableItemStyle} onPress={() => { _deleteMessage(messageId) }}>{
-                        btnSpinner ? <Spinner color={Colors.white} /> : <Text style={styles.messageDrawerPressableTextStyle}>Supprimer l'annonce</Text>
+                        btnSpinner ? <Spinner color={Colors.white} /> : <Text style={styles.messageDrawerPressableTextStyle}>Supprimer le Message</Text>
                     }</Pressable>
                 </View>
             </View >

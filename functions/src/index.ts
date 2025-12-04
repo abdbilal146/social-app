@@ -3,6 +3,10 @@ import { initializeApp } from "firebase-admin/app";
 import { getFirestore } from "firebase-admin/firestore";
 import { getMessaging } from "firebase-admin/messaging";
 
+import * as notifications from './notifications';
+
+exports.notifications = notifications;
+
 initializeApp();
 
 export const sendNewMessageNotification = onDocumentCreated(

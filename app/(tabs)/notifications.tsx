@@ -1,5 +1,5 @@
 import { Avatar, AvatarImage } from "@/components/ui/avatar";
-import { Button, ButtonText } from "@/components/ui/button";
+import { Button, ButtonSpinner, ButtonText } from "@/components/ui/button";
 import { HStack } from "@/components/ui/hstack";
 import { Colors } from "@/constants/Colors";
 import { useActionSheet } from "@/contexts/ActionSheetContext";
@@ -139,18 +139,37 @@ function NotificationCard(props: any) {
 function FriendRequestActionSheetBody(props: any) {
 
     const { closeActionSheet } = useActionSheet()
+    const [acceptLoader, setAcceptLoader] = useState<boolean>(false)
+    const [refuseLoader, setRefuseLoader] = useState<boolean>(false)
 
     const _removeFriendInvitation = async () => {
         if (!auth.currentUser?.uid) return
-        await removeFriendInvitation(auth.currentUser?.uid, props.senderId)
-        closeActionSheet()
+        setRefuseLoader(true)
+        try {
+            await removeFriendInvitation(auth.currentUser?.uid, props.senderId)
+        } catch (e) {
+            console.log(e)
+        } finally {
+            closeActionSheet()
+            setRefuseLoader(false)
+        }
+
 
     }
 
     const _addFriend = async () => {
         if (!auth.currentUser?.uid) return
-        await acceptFriendInvitation(auth.currentUser?.uid, props.senderId)
-        closeActionSheet()
+        setAcceptLoader(true)
+        try {
+            await acceptFriendInvitation(auth.currentUser?.uid, props.senderId)
+        } catch (e) {
+            console.log(e)
+        } finally {
+            closeActionSheet()
+            setAcceptLoader(false)
+        }
+
+
     }
 
     return (
@@ -159,10 +178,13 @@ function FriendRequestActionSheetBody(props: any) {
             <Text style={styles.actionSheetSubtitle}>Souhaitez-vous accepter cette demande ?</Text>
             <HStack style={styles.buttonContainer}>
                 <Button onPress={_addFriend} style={[styles.actionButton, styles.acceptButton]}>
-                    <ButtonText style={styles.acceptButtonText}>Accepter</ButtonText>
+                    {
+                        acceptLoader ? <ButtonSpinner></ButtonSpinner> : <ButtonText style={styles.acceptButtonText}>Accepter</ButtonText>
+                    }
                 </Button>
                 <Button onPress={_removeFriendInvitation} variant="outline" style={[styles.actionButton, styles.declineButton]}>
-                    <ButtonText style={styles.declineButtonText}>Refuser</ButtonText>
+                    {refuseLoader ? <ButtonSpinner></ButtonSpinner> : <ButtonText style={styles.declineButtonText}>Refuser</ButtonText>}
+
                 </Button>
             </HStack>
         </View>

@@ -2,8 +2,20 @@ import { Ionicons } from "@expo/vector-icons";
 import { Tabs } from "expo-router";
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import Feather from '@expo/vector-icons/Feather';
+import { useEffect, useState } from "react";
+import { auth } from "@/firebaseConfig";
+import { listenToUser } from "@/db/users";
 
 export default function TabsLayout() {
+  const [userNotifications, setUserNotifications] = useState<any>()
+
+  useEffect(() => {
+    if (!auth.currentUser?.uid) return
+
+    const unsub = listenToUser(auth.currentUser.uid, (data) => {
+      setUserNotifications(data.notifications)
+    })
+  })
   const homeIcon = () => <Ionicons size={25} name="home" color={"#565656"} />
   const personIcon = () => <Ionicons size={25} name="person" color={"#565656"} />
 
@@ -66,6 +78,7 @@ export default function TabsLayout() {
         options={{
           tabBarIcon: notificationsIcon,
           title: "Notifications",
+          tabBarBadge: userNotifications?.length === 0 ? undefined : userNotifications?.length
         }}
       />
       <Tabs.Screen
