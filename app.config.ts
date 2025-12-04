@@ -3,9 +3,10 @@ import { ExpoConfig, ConfigContext } from 'expo/config';
 export default ({ config }: ConfigContext): ExpoConfig => ({
     ...config,
     name: "StudentSocialApp",
-    slug: "StudentSocialApp",
+    slug: "student-social-app",
     version: "1.0.0",
     orientation: "portrait",
+    owner: 'abdbilal146',
     icon: "./assets/icon.png",
     userInterfaceStyle: "light",
     platforms: [
@@ -49,7 +50,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     extra: {
         "router": {},
         "eas": {
-            "projectId": "174fa273-1d40-4270-bb78-22d56af66545"
+            "projectId": "255e28ff-eb16-4029-991e-ebf4803fd23a"
         }
     }
 });
