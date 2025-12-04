@@ -14,8 +14,10 @@ import { Colors } from "@/constants/Colors";
 import { HStack } from "@/components/ui/hstack";
 import { Avatar, AvatarImage } from "@/components/ui/avatar";
 import { getAllUsers, listenToUser } from "@/db/users";
-import { listenToMessages, listenToUserChats, sendMessage } from "@/db/chats";
+import { deleteMessage, listenToMessages, listenToUserChats, sendMessage } from "@/db/chats";
 import { useRouter } from "expo-router";
+import { useActionSheet } from "@/contexts/ActionSheetContext";
+import { Spinner } from "@/components/ui/spinner";
 
 export default function Message() {
     const [getUsers, setUsers] = useState<any[]>()
@@ -161,6 +163,9 @@ function DialogScreen({ chatId, receiverId }: { chatId: string, receiverId: stri
     /* const [receiverPhotoProfile, setReceiverPhotoProfile] = useState<string>() */
     const [receiverData, setReceiverData] = useState<DocumentData>()
     const router = useRouter()
+    const { openActionSheet, setBodyContent, closeActionSheet } = useActionSheet()
+    const [btnSpinner, setBtnSpinner] = useState<boolean>(false)
+
 
 
 
@@ -202,6 +207,33 @@ function DialogScreen({ chatId, receiverId }: { chatId: string, receiverId: stri
                 name: name
             }
         })
+    }
+
+    const _deleteMessage = async (messageId: string) => {
+
+        try {
+            setBtnSpinner(true)
+            await deleteMessage(chatId, messageId)
+        } catch (e) {
+            console.log(e)
+        } finally {
+            setBtnSpinner(false)
+            closeActionSheet()
+        }
+    }
+
+
+    const openActionSheetAndSetTheContent = async (messageId: string) => {
+        openActionSheet()
+        setBodyContent(<>
+            < View >
+                <View style={styles.messageDrawerBodyContainerStyle}>
+                    <Pressable style={styles.messageDrawerPressableItemStyle} onPress={() => { _deleteMessage(messageId) }}>{
+                        btnSpinner ? <Spinner color={Colors.white} /> : <Text style={styles.messageDrawerPressableTextStyle}>Supprimer l'annonce</Text>
+                    }</Pressable>
+                </View>
+            </View >
+        </>)
     }
 
     return (
@@ -279,7 +311,7 @@ function DialogScreen({ chatId, receiverId }: { chatId: string, receiverId: stri
                                         maxWidth: '80%',
                                     }}
                                 >
-                                    <Text style={{ color: Colors.white, fontSize: 16 }}>
+                                    <Text onLongPress={() => { openActionSheetAndSetTheContent(item.id) }} style={{ color: Colors.white, fontSize: 16 }}>
                                         {item.text}
                                     </Text>
                                 </Animated.View>
@@ -495,5 +527,30 @@ const styles = StyleSheet.create({
     },
     sendBtn: {
 
+    },
+
+
+    // message drawer
+
+    messageDrawerBodyContainerStyle: {
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        padding: 20
+    },
+
+    messageDrawerPressableItemStyle: {
+        backgroundColor: Colors.error,
+        width: "100%",
+        height: 50,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        borderRadius: 12
+    },
+    messageDrawerPressableTextStyle: {
+        fontSize: 16,
+        fontWeight: "600",
+        color: Colors.white
     }
 })

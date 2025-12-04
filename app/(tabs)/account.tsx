@@ -26,6 +26,7 @@ import { saveUrlToFirestore, uploadProfileImageToCloud } from "@/utils/cloud_sto
 import { saveToken } from "@/notifications";
 import { Collections } from "@/constants/Collections";
 import { createUser, deleteUserDocument, getAllFriends, listenToUser, updateUser } from "@/db/users";
+import { useRouter } from "expo-router";
 
 
 const { width, height } = Dimensions.get("window");
@@ -564,6 +565,8 @@ function ProfilePhotoMenu() {
 function FriendsBody() {
 
   const [userData, setUserData] = useState<any[] | null>(null)
+  const { closeActionSheet } = useActionSheet()
+  const router = useRouter()
 
 
   useEffect(() => {
@@ -584,6 +587,21 @@ function FriendsBody() {
     )
   }
 
+  const navigateToASpecificRoute = (route: string, userId: string) => {
+    router.push(
+      {
+        pathname: route,
+        params: {
+          userId: userId
+        }
+      }
+    )
+
+    closeActionSheet()
+
+
+  }
+
   return (
     <View style={{ width: '100%', height: 400 }}>
       <FlatList
@@ -591,7 +609,7 @@ function FriendsBody() {
         keyExtractor={(item) => item.id}
         contentContainerStyle={{ padding: 16, gap: 12 }}
         renderItem={({ item }) => (
-          <Pressable style={styles.friendItemContainer}>
+          <Pressable onPress={() => { navigateToASpecificRoute('/userprofile', item.uid) }} style={styles.friendItemContainer}>
             <HStack style={{ alignItems: 'center', gap: 12 }}>
               <Avatar size="md">
                 <AvatarFallbackText>{item.name}</AvatarFallbackText>
