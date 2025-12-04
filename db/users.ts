@@ -112,18 +112,25 @@ export const removeFriendFromList = async (userId: string, currentUserId: string
 
 
 export const removeFriendInvitation = async (currentUserId: string, senderId: string) => {
-    const userRef = doc(db, Collections.users, currentUserId)
-    await updateDoc(userRef, {
+    const currentUserRef = doc(db, Collections.users, currentUserId)
+    await updateDoc(currentUserRef, {
         notifications: arrayRemove("friendRequest" + "_" + senderId),
         friendRequests: arrayRemove(senderId)
     })
+
+    const senderUserRef = doc(db, Collections.users, senderId)
+    await updateDoc(senderUserRef, {
+        friendInvitationsSent: arrayRemove(currentUserId),
+
+    })
+
 
 }
 
 
 export const acceptFriendInvitation = async (currentUserId: string, senderId: string) => {
-    const userRef = doc(db, Collections.users, currentUserId)
-    await updateDoc(userRef, {
+    const currentUserRef = doc(db, Collections.users, currentUserId)
+    await updateDoc(currentUserRef, {
         friends: arrayUnion(senderId),
         acceptedfriendInvitations: arrayUnion(senderId),
         friendRequests: arrayRemove(senderId),
@@ -134,6 +141,7 @@ export const acceptFriendInvitation = async (currentUserId: string, senderId: st
 
     await updateDoc(senderUserRef, {
         friends: arrayUnion(currentUserId),
+        friendInvitationsSent: arrayRemove(currentUserId)
     })
 
 }

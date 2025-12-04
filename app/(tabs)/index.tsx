@@ -16,6 +16,8 @@ import { Colors } from "@/constants/Colors";
 import { Spinner } from "@/components/ui/spinner";
 import Animated, { FadeInDown, Layout } from "react-native-reanimated";
 import { Ionicons } from "@expo/vector-icons";
+import AdMob from "@/components/ui/AdMob";
+
 
 const { width, height } = Dimensions.get("window")
 
@@ -89,6 +91,11 @@ export default function Index() {
                     </View>
                 }
             />
+
+            <View>
+                <AdMob></AdMob>
+            </View>
+            {/*publicité*/}
 
             <Fab
                 style={styles.fabBtnStyle}

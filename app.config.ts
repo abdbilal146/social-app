@@ -37,7 +37,8 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     plugins: [
         "expo-router",
         "expo-font",
-        "expo-notifications"
+        "expo-notifications",
+        "expo-ads-admob",
     ],
     notification: {
         icon: "./assets/icon.png",

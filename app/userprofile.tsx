@@ -130,15 +130,18 @@ export default function UserProfile() {
                 </Divider>
                 <HStack>
                     <Button onPress={async () => {
-                        if (!currentUserInfo?.friends?.includes(userInfo.uid)) {
-                            await addFriendToList()
+
+                        if (currentUserInfo?.friends?.includes(userInfo.uid)) {
+                            await _removeFriendFromList();
                         }
+
                         else if (currentUserInfo?.friendInvitationsSent?.includes(userInfo.uid)) {
-                            await _removeFriendRequest()
-                            console.log("remove")
+                            await _removeFriendRequest();
+                            console.log("remove request");
                         }
-                        else {
-                            await _removeFriendFromList()
+
+                        if (!currentUserInfo?.friendInvitationsSent?.includes(userInfo.uid) && !currentUserInfo?.friends?.includes(userInfo.uid)) {
+                            await addFriendToList();
                         }
                     }} style={styles.useProfileBtn}>
                         <ButtonText style={styles.useProfileBtnText}>
