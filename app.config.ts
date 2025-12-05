@@ -2,8 +2,8 @@ import { ExpoConfig, ConfigContext } from 'expo/config';
 
 export default ({ config }: ConfigContext): ExpoConfig => ({
     ...config,
-    name: "StudentSocialApp",
-    slug: "student-social-app",
+    name: "Social app",
+    slug: "com-socialmancer-app",
     version: "1.0.0",
     orientation: "portrait",
     owner: 'abdbilal146',
@@ -23,13 +23,14 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
         supportsTablet: true
     },
     android: {
+        versionCode: 1,
         adaptiveIcon: {
             "foregroundImage": "./assets/adaptive-icon.png",
             "backgroundColor": "#ffffff"
         },
         "edgeToEdgeEnabled": true,
         "predictiveBackGestureEnabled": false,
-        "package": "com.student.app",
+        "package": "com.socialmancer.app",
         "googleServicesFile": process.env.GOOGLE_SERVICES_JSON || "./google-services.json",
 
     },
@@ -52,11 +53,11 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
         icon: "./assets/icon.png",
         color: "#3F72AF"
     },
-    scheme: "studentsocialapp",
+    scheme: "com.socialmancer.app",
     extra: {
         "router": {},
         "eas": {
-            "projectId": "255e28ff-eb16-4029-991e-ebf4803fd23a"
+            "projectId": "d110bf12-0296-4b67-9291-005f7c9be145"
         }
     }
 });

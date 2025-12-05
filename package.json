@@ -1,7 +1,8 @@
 {
-  "name": "studentapp",
+  "name": "social-app",
   "version": "1.0.0",
   "main": "expo-router/entry",
+  "author": "abdbilal146",
   "scripts": {
     "start": "expo start",
     "android": "expo start --android",
