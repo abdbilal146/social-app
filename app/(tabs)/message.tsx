@@ -15,7 +15,7 @@ import { HStack } from "@/components/ui/hstack";
 import { Avatar, AvatarImage } from "@/components/ui/avatar";
 import { getAllFriends, getAllUsers, listenToUser } from "@/db/users";
 import { deleteMessage, listenToMessages, listenToUserChats, sendMessage } from "@/db/chats";
-import { useRouter } from "expo-router";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import { useActionSheet } from "@/contexts/ActionSheetContext";
 import { Spinner } from "@/components/ui/spinner";
 import { Ionicons } from "@expo/vector-icons";
@@ -28,6 +28,17 @@ export default function Message() {
     const [chatId, setChatid] = useState<string>()
     const [receiverId, setReceiverId] = useState<string>()
     const [messages, setMessages] = useState<any[]>()
+    const params = useLocalSearchParams()
+    const router = useRouter()
+
+
+    useEffect(() => {
+        if (params.chatId && params.receiverId) {
+            setChatid(params.chatId as string)
+            setReceiverId(params.receiverId as string)
+            setDialogScreenVisibility(true)
+        }
+    }, [params.chatId, params.receiverId])
 
 
 
@@ -208,14 +219,17 @@ export default function Message() {
                         </View>
                     </Animated.View>
                 ) : (
-                    <DialogScreen chatId={chatId!} receiverId={receiverId!}></DialogScreen>
+                    <DialogScreen chatId={chatId!} receiverId={receiverId!} onBack={() => {
+                        setDialogScreenVisibility(false)
+                        router.setParams({ chatId: "", receiverId: "" })
+                    }}></DialogScreen>
                 )
             }
         </View >
     )
 }
 
-function DialogScreen({ chatId, receiverId }: { chatId: string, receiverId: string }) {
+function DialogScreen({ chatId, receiverId, onBack }: { chatId: string, receiverId: string, onBack: () => void }) {
     const [text, setText] = useState("")
     const [messages, setMessages] = useState<any[]>([])
     /* const [receiverPhotoProfile, setReceiverPhotoProfile] = useState<string>() */
@@ -308,6 +322,9 @@ function DialogScreen({ chatId, receiverId }: { chatId: string, receiverId: stri
                     {/* HEADER */}
                     <View style={styles.diaolgScreenHeader}>
                         <HStack style={styles.dialogScreenHeaderContentContainer}>
+                            <Pressable onPress={onBack} style={{ marginRight: 10 }}>
+                                <Ionicons name="arrow-back" size={24} color={Colors.white} />
+                            </Pressable>
                             <View style={styles.headerUserInfo}>
                                 <Pressable
                                     onPress={() =>

@@ -5,7 +5,7 @@ import { HStack } from "@/components/ui/hstack";
 import { Colors } from "@/constants/Colors";
 import { deletePost, listenToUserPosts, togglePostLike } from "@/db/posts";
 import { addfriend, listenToUser, removeFriendFromList, removeFriendRequest } from "@/db/users";
-import { useLocalSearchParams } from "expo-router";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useState } from "react";
 import { Dimensions, ScrollView, StyleSheet, Text, View } from "react-native";
 import { PostCard } from "./(tabs)";
@@ -23,6 +23,23 @@ export default function UserProfile() {
     const [userPosts, setUserPosts] = useState<any[]>()
     const [messageBtnDisabled, setMessageBtnDisabled] = useState<boolean>(true)
     const { closeActionSheet } = useActionSheet()
+    const router = useRouter()
+
+    const _goToMessagerie = () => {
+        if (!userInfo?.uid || !auth.currentUser?.uid) return
+
+        // Create the chat ID by sorting user IDs (same pattern as in message.tsx)
+        const sortedIds = [auth.currentUser.uid, userInfo.uid].sort().join("_")
+
+        // Navigate to message tab with chat parameters
+        router.push({
+            pathname: "/(tabs)/message",
+            params: {
+                chatId: sortedIds,
+                receiverId: userInfo.uid
+            }
+        })
+    }
 
     useEffect(() => {
         if (!params.userId) return;
