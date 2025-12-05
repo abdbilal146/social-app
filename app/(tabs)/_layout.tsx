@@ -4,28 +4,42 @@ import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import Feather from '@expo/vector-icons/Feather';
 import { useEffect, useState } from "react";
 import { auth } from "@/firebaseConfig";
+import { onAuthStateChanged } from "firebase/auth";
 import { listenToUser } from "@/db/users";
 
 export default function TabsLayout() {
-  const [userNotifications, setUserNotifications] = useState<any>()
+  const [userNotifications, setUserNotifications] = useState()
+  const [isAuthenticated, setIsAuthenticated] = useState(!!auth.currentUser)
+
+  console.log("TabsLayout render. isAuthenticated:", isAuthenticated)
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      setIsAuthenticated(!!user)
+      if (!user) {
+        setUserNotifications(undefined)
+      }
+    })
+
+    return () => unsubscribe()
+  }, [])
 
   useEffect(() => {
     if (!auth.currentUser?.uid) return
 
     const unsub = listenToUser(auth.currentUser.uid, (data) => {
-      setUserNotifications(data.notifications)
+      setUserNotifications(data.notifications.length)
     })
-  })
-  const homeIcon = () => <Ionicons size={25} name="home" color={"#565656"} />
-  const personIcon = () => <Ionicons size={25} name="person" color={"#565656"} />
 
-  const searchIcon = () => <Ionicons size={25} name="search" color={"#565656"} />
+    return () => unsub()
+  }, [isAuthenticated])
 
-  const postsIcon = () => <MaterialCommunityIcons size={25} name="post" color={"#565656"} />
-
-  const messageIcon = () => <Feather size={25} name="send" color={"#565656"} />
-
-  const notificationsIcon = () => <Ionicons size={25} name="notifications" color={"#565656"}></Ionicons>
+  const homeIcon = () => <Ionicons name="home" size={24} />
+  const personIcon = () => <Ionicons name="person" size={24} />
+  const searchIcon = () => <Ionicons name="search" size={24} />
+  const postsIcon = () => <MaterialCommunityIcons name="post-outline" size={24} />
+  const messageIcon = () => <Feather name="message-circle" size={24} />
+  const notificationsIcon = () => <Ionicons name="notifications" size={24} />
 
   return (
     <Tabs
@@ -33,7 +47,7 @@ export default function TabsLayout() {
         tabBarInactiveTintColor: "white",
         tabBarActiveTintColor: "black",
         tabBarStyle: {
-          backgroundColor: "white", //#112D4E
+          backgroundColor: "white",
           paddingTop: 6,
           height: 80
         },
@@ -42,51 +56,36 @@ export default function TabsLayout() {
           fontWeight: "600",
         },
         headerShown: false,
-      }}>
-      <Tabs.Screen
-
-        name="index"
-        options={{
-          tabBarIcon: homeIcon,
-          title: "Accueil",
-        }}
-      />
-      <Tabs.Screen
-        name="search"
-        options={{
-          tabBarIcon: searchIcon,
-          title: "Recherche",
-        }}
-      />
+      }}
+    >
+      <Tabs.Screen name="index" options={{ title: "Home", tabBarIcon: homeIcon }} />
+      <Tabs.Screen name="search" options={{ title: "Search", tabBarIcon: searchIcon }} />
       <Tabs.Screen
         name="myposts"
         options={{
+          title: "My Posts",
           tabBarIcon: postsIcon,
-          title: "Mes Publi",
+          href: isAuthenticated ? undefined : null
         }}
       />
       <Tabs.Screen
         name="message"
         options={{
-          tabBarIcon: messageIcon,
           title: "Messages",
+          tabBarIcon: messageIcon,
+          href: isAuthenticated ? undefined : null
         }}
       />
       <Tabs.Screen
         name="notifications"
         options={{
-          tabBarIcon: notificationsIcon,
           title: "Notifications",
-          tabBarBadge: userNotifications?.length === 0 ? undefined : userNotifications?.length
+          tabBarIcon: notificationsIcon,
+          tabBarBadge: userNotifications,
+          href: isAuthenticated ? undefined : null
         }}
       />
-      <Tabs.Screen
-        name="account"
-        options={{
-          tabBarIcon: personIcon,
-          title: "Compte",
-        }}
-      />
+      <Tabs.Screen name="account" options={{ title: "Profile", tabBarIcon: personIcon }} />
     </Tabs>
   );
 }

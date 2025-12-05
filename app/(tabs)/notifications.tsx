@@ -72,7 +72,7 @@ export default function Notifications() {
                 <Text style={styles.headerSubtitle}>Vos activités récentes</Text>
             </View>
             <FlatList
-                data={notifications}
+                data={notifications!}
                 keyExtractor={(item) => item.id}
                 renderItem={renderNotificationItem}
                 contentContainerStyle={styles.listContent}

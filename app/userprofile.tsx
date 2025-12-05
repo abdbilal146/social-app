@@ -70,7 +70,7 @@ export default function UserProfile() {
 
         const retrievUserData = listenToUser(auth.currentUser.uid, (data) => {
             setCurrentUserInfo(data)
-            if (data.friends.includes(params.userId as string)) {
+            if (data?.friends?.includes(params.userId as string)) {
                 setMessageBtnDisabled(false)
             }
             console.log("currentUser:", data)

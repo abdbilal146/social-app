@@ -19,6 +19,7 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import { useActionSheet } from "@/contexts/ActionSheetContext";
 import { Spinner } from "@/components/ui/spinner";
 import { Ionicons } from "@expo/vector-icons";
+import { onAuthStateChanged } from "firebase/auth";
 
 export default function Message() {
     const [getFriends, setFriends] = useState<any[]>()
@@ -39,6 +40,31 @@ export default function Message() {
             setDialogScreenVisibility(true)
         }
     }, [params.chatId, params.receiverId])
+
+
+    useEffect(() => {
+        let chatUnsub: (() => void) | undefined;
+
+        const authUnsub = onAuthStateChanged(auth, (user) => {
+            if (chatUnsub) {
+                chatUnsub();
+                chatUnsub = undefined;
+            }
+
+            if (user) {
+                chatUnsub = listenToUserChats(user.uid, (messagesData) => {
+                    setMessages(messagesData)
+                })
+            } else {
+                setMessages([])
+            }
+        })
+
+        return () => {
+            authUnsub()
+            if (chatUnsub) chatUnsub()
+        }
+    }, [])
 
 
 
@@ -63,16 +89,7 @@ export default function Message() {
         return () => backHandler.remove()
     }, [dialogScreenVisibility])
 
-    useEffect(() => {
-        const uid = auth.currentUser?.uid
-        if (!uid) return
 
-        const unsubscribe = listenToUserChats(uid, (messagesData) => {
-            setMessages(messagesData)
-            console.log("messages data:", messagesData)
-        })
-        return () => unsubscribe()
-    }, [])
 
 
     const onSearch = () => {
