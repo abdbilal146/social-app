@@ -4,7 +4,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     ...config,
     name: "Social app",
     slug: "com-socialmancer-app",
-    version: "1.0.0",
+    version: "1.1.0",
     orientation: "portrait",
     owner: 'abdbilal146',
     icon: "./assets/icon.png",
@@ -23,7 +23,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
         supportsTablet: true
     },
     android: {
-        versionCode: 1,
+        versionCode: 2,
         adaptiveIcon: {
             "foregroundImage": "./assets/adaptive-icon.png",
             "backgroundColor": "#ffffff"

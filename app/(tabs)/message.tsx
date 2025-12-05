@@ -817,10 +817,10 @@ const styles = StyleSheet.create({
     input: {
         borderColor: Colors.primary,
         borderRadius: 20,
-        backgroundColor: "rgba(255, 255, 255, 0.05)",
+        backgroundColor: Colors.white,
     },
     inputField: {
-        color: Colors.text,
+        color: Colors.black,
     },
     renderSearchItemContainer: {
         backgroundColor: "transparent",
@@ -851,7 +851,7 @@ const styles = StyleSheet.create({
         fontWeight: "600"
     },
     sendBtn: {
-
+        borderRadius: 20
     },
 
 
