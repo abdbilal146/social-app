@@ -28,7 +28,7 @@ export default function TabsLayout() {
     if (!auth.currentUser?.uid) return
 
     const unsub = listenToUser(auth.currentUser.uid, (data) => {
-      setUserNotifications(data.notifications.length)
+      setUserNotifications(data.notifications?.length)
     })
 
     return () => unsub()
